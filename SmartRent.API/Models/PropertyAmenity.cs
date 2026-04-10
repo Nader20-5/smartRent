@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("PropertyAmenities")]
     public class PropertyAmenity
     {
         [Key]
@@ -14,8 +15,12 @@ namespace SmartRent.API.Models
         [ForeignKey("PropertyId")]
         public Property Property { get; set; } = null!;
 
-        [Required]
-        [MaxLength(100)]
-        public string Name { get; set; } = string.Empty;
+        public bool HasParking { get; set; } = false;
+
+        public bool HasElevator { get; set; } = false;
+
+        public bool IsFurnished { get; set; } = false;
+
+        public bool HasPool { get; set; } = false;
     }
 }

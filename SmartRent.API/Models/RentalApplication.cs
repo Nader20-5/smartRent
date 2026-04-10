@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("RentalApplications")]
     public class RentalApplication
     {
         [Key]
@@ -22,15 +23,19 @@ namespace SmartRent.API.Models
 
         [Required]
         [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
+        public string Status { get; set; } = "Pending"; // Pending, Accepted, Rejected
 
-        [MaxLength(1000)]
-        public string? CoverLetter { get; set; }
+        [Required]
+        public DateTime StartDate { get; set; }
 
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal? ProposedRent { get; set; }
+        [Required]
+        public DateTime EndDate { get; set; }
 
-        public DateTime? MoveInDate { get; set; }
+        [Required]
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal MonthlyPrice { get; set; }
+
+        public string? Notes { get; set; }
 
         [MaxLength(500)]
         public string? RejectionReason { get; set; }

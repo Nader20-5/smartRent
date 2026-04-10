@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("PropertyImages")]
     public class PropertyImage
     {
         [Key]
@@ -18,7 +19,7 @@ namespace SmartRent.API.Models
         [MaxLength(500)]
         public string ImageUrl { get; set; } = string.Empty;
 
-        public bool IsPrimary { get; set; } = false;
+        public bool IsMain { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
