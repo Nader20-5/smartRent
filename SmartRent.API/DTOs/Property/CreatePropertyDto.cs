@@ -17,36 +17,19 @@ namespace SmartRent.API.DTOs.Property
 
         [Required]
         [MaxLength(500)]
-        public string Address { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(100)]
-        public string City { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(100)]
-        public string State { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(20)]
-        public string ZipCode { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
 
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal MonthlyRent { get; set; }
+        public decimal Price { get; set; }
 
-        [Range(0, double.MaxValue)]
-        public decimal? SecurityDeposit { get; set; }
+        [Required]
+        public string RentalStatus { get; set; } = string.Empty;
 
-        [Range(0, 50)]
-        public int Bedrooms { get; set; }
-
-        [Range(0, 50)]
-        public int Bathrooms { get; set; }
-
-        [Range(0, double.MaxValue)]
-        public double? AreaSqFt { get; set; }
-
-        public List<string>? Amenities { get; set; }
+        // Amenities
+        public bool HasParking { get; set; }
+        public bool HasElevator { get; set; }
+        public bool IsFurnished { get; set; }
+        public bool HasPool { get; set; }
     }
 }

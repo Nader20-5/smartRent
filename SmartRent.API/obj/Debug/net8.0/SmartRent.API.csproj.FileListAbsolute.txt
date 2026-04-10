@@ -142,3 +142,4 @@ D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\refint\SmartRent.API.dll
 D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\SmartRent.API.pdb
 D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\SmartRent.API.genruntimeconfig.cache
 D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\ref\SmartRent.API.dll
+D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\SmartRent.API.sourcelink.json
