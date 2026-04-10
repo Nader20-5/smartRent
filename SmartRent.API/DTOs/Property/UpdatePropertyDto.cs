@@ -12,11 +12,13 @@ namespace SmartRent.API.DTOs.Property
         [MaxLength(50)]
         public string? PropertyType { get; set; }
 
-        [MaxLength(200)]
+        [MaxLength(500)]
         public string? Location { get; set; }
 
-        [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than zero.")]
+        [Range(0, double.MaxValue)]
         public decimal? Price { get; set; }
+
+        public string? RentalStatus { get; set; }
 
         // Amenities
         public bool? HasParking { get; set; }

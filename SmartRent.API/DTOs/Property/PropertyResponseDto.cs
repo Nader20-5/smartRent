@@ -7,19 +7,19 @@ namespace SmartRent.API.DTOs.Property
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
-        public string? Description { get; set; }
+        public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string Location { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
         public string RentalStatus { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public bool IsFavorite { get; set; }
-        public bool IsApproved { get; set; }
-        public bool IsActive { get; set; }
+
         public PropertyAmenitiesDto Amenities { get; set; } = new();
         public List<PropertyImageDto> Images { get; set; } = new();
         public PropertyLandlordDto Landlord { get; set; } = new();
         public PropertyRatingDto Rating { get; set; } = new();
+
+        public bool IsFavorite { get; set; }
     }
 
     public class PropertyAmenitiesDto
@@ -41,13 +41,13 @@ namespace SmartRent.API.DTOs.Property
     {
         public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
-        public string? PhoneNumber { get; set; }
-        public string? ProfileImage { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string ProfileImage { get; set; } = string.Empty;
     }
 
     public class PropertyRatingDto
     {
-        public double AverageScore { get; set; }
+        public decimal AverageScore { get; set; }
         public int TotalReviews { get; set; }
     }
 }
