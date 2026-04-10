@@ -1,1 +1,11 @@
-{"Version":1,"Hash":"roOwr/iUCoYyvWYE+QlI0lhcHuIU/v/1rFj+ULON120=","Source":"SmartRent.API","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}
+{
+  "Version": 1,
+  "Hash": "5bcHepfcCfqWVPWTVI1rkDm4Z4U3fZa3uqYqNJd6MB4=",
+  "Source": "SmartRent.API",
+  "BasePath": "_content/SmartRent.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

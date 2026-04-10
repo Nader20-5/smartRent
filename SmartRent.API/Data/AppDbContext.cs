@@ -28,7 +28,6 @@ namespace SmartRent.API.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(u => u.Email).IsUnique();
-                entity.Property(u => u.Role).HasMaxLength(20);
             });
 
             // Property constraints
@@ -37,10 +36,9 @@ namespace SmartRent.API.Data
                 entity.HasOne(p => p.Landlord)
                       .WithMany(u => u.Properties)
                       .HasForeignKey(p => p.LandlordId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
 
-                entity.Property(p => p.MonthlyRent).HasColumnType("decimal(18,2)");
-                entity.Property(p => p.SecurityDeposit).HasColumnType("decimal(18,2)");
+                entity.Property(p => p.Price).HasColumnType("decimal(10,2)");
             });
 
             // PropertyImage constraints
@@ -52,12 +50,14 @@ namespace SmartRent.API.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // PropertyAmenity constraints
+            // PropertyAmenity constraints — one-to-one with Property
             modelBuilder.Entity<PropertyAmenity>(entity =>
             {
+                entity.HasIndex(pa => pa.PropertyId).IsUnique();
+
                 entity.HasOne(pa => pa.Property)
-                      .WithMany(p => p.Amenities)
-                      .HasForeignKey(pa => pa.PropertyId)
+                      .WithOne(p => p.Amenity)
+                      .HasForeignKey<PropertyAmenity>(pa => pa.PropertyId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -67,12 +67,12 @@ namespace SmartRent.API.Data
                 entity.HasOne(v => v.Property)
                       .WithMany(p => p.VisitRequests)
                       .HasForeignKey(v => v.PropertyId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasOne(v => v.Tenant)
                       .WithMany(u => u.VisitRequests)
                       .HasForeignKey(v => v.TenantId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
             });
 
             // RentalApplication constraints
@@ -81,14 +81,14 @@ namespace SmartRent.API.Data
                 entity.HasOne(r => r.Property)
                       .WithMany(p => p.RentalApplications)
                       .HasForeignKey(r => r.PropertyId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasOne(r => r.Tenant)
                       .WithMany(u => u.RentalApplications)
                       .HasForeignKey(r => r.TenantId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
 
-                entity.Property(r => r.ProposedRent).HasColumnType("decimal(18,2)");
+                entity.Property(r => r.MonthlyPrice).HasColumnType("decimal(10,2)");
             });
 
             // ApplicationDocument constraints
@@ -108,12 +108,12 @@ namespace SmartRent.API.Data
                 entity.HasOne(f => f.User)
                       .WithMany(u => u.Favorites)
                       .HasForeignKey(f => f.UserId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasOne(f => f.Property)
                       .WithMany(p => p.Favorites)
                       .HasForeignKey(f => f.PropertyId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Review constraints
@@ -122,14 +122,14 @@ namespace SmartRent.API.Data
                 entity.HasOne(r => r.Property)
                       .WithMany(p => p.Reviews)
                       .HasForeignKey(r => r.PropertyId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasOne(r => r.Tenant)
                       .WithMany(u => u.Reviews)
                       .HasForeignKey(r => r.TenantId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.NoAction);
 
-                entity.HasIndex(r => new { r.PropertyId, r.TenantId }).IsUnique();
+                entity.HasIndex(r => new { r.TenantId, r.PropertyId }).IsUnique();
             });
 
             // Notification constraints
@@ -138,7 +138,7 @@ namespace SmartRent.API.Data
                 entity.HasOne(n => n.User)
                       .WithMany(u => u.Notifications)
                       .HasForeignKey(n => n.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.NoAction);
             });
         }
     }
