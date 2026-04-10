@@ -27,6 +27,9 @@ namespace SmartRent.API.Controllers
         public async Task<IActionResult> GetAll(
             [FromQuery] string? location,
             [FromQuery] string? propertyType,
+            [FromQuery] decimal? minPrice,
+            [FromQuery] decimal? maxPrice)
+        {
             int? currentUserId = GetCurrentUserId();
             var result = await _propertyService.GetAllAsync(location, propertyType, minPrice, maxPrice, currentUserId);
 

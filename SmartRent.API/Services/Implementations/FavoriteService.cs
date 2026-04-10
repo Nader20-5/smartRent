@@ -183,7 +183,7 @@ namespace SmartRent.API.Services.Implementations
                 },
                 Rating = new PropertyRatingDto
                 {
-                    AverageScore = avgScore,
+                    AverageScore = (decimal)avgScore,
                     TotalReviews = totalReviews
                 }
             };

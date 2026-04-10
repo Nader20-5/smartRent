@@ -20,6 +20,8 @@ namespace SmartRent.API.DTOs.Property
         public PropertyRatingDto Rating { get; set; } = new();
 
         public bool IsFavorite { get; set; }
+        public bool IsApproved { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public class PropertyAmenitiesDto
