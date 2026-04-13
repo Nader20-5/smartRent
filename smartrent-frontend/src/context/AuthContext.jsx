@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext(null);
 
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -18,33 +21,34 @@ export const AuthProvider = ({ children }) => {
   // Restore user and token from localStorage on mount
   useEffect(() => {
     try {
-      const storedToken = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
+      const storedToken = localStorage.getItem(TOKEN_KEY);
+      const storedUser = localStorage.getItem(USER_KEY);
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
       console.error("Failed to restore auth state:", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const login = (userData, authToken) => {
+  const login = (authToken, userData) => {
     setUser(userData);
     setToken(authToken);
-    localStorage.setItem("token", authToken);
-    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem(TOKEN_KEY, authToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    window.location.href = "/login";
   };
 
   const isAuthenticated = !!token;
