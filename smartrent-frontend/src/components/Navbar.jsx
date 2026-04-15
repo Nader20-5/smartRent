@@ -34,13 +34,13 @@ const Navbar = () => {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
-  // Hide navbar on dashboard pages (sidebar handles nav)
-  const isDashboardPage = location.pathname.startsWith("/landlord");
-  if (isDashboardPage && isAuthenticated) return null;
+  // Hide navbar on pages that have their own integrated navigation
+  const hiddenPaths = ["/login", "/register", "/admin/dashboard", "/landlord/dashboard"];
+  const isDashboardPage = location.pathname.startsWith("/landlord") || location.pathname.startsWith("/admin");
+  if (hiddenPaths.includes(location.pathname) || (isDashboardPage && isAuthenticated)) return null;
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
   };
 
   return (
@@ -52,7 +52,7 @@ const Navbar = () => {
         {/* Brand */}
         <Link to="/" className="navbar-brand">
           <FaBuilding className="navbar-brand-icon" />
-          <span className="navbar-brand-text">Prophoria</span>
+          <span className="navbar-brand-text">SmartRent</span>
         </Link>
 
         {/* Desktop Nav */}

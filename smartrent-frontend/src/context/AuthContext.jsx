@@ -3,47 +3,64 @@ import api from "../services/api";
 
 const AuthContext = createContext(null);
 
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already logged in on mount
+  // Restore user and token from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("prophoria_user");
-    const storedToken = localStorage.getItem("prophoria_token");
-
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
-      api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+    try {
+      const storedToken = localStorage.getItem(TOKEN_KEY);
+      const storedUser = localStorage.getItem(USER_KEY);
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+      }
+    } catch (error) {
+      console.error("Failed to restore auth state:", error);
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
-  const login = (userData, jwtToken) => {
+  const login = (authToken, userData) => {
     setUser(userData);
-    setToken(jwtToken);
-    localStorage.setItem("prophoria_user", JSON.stringify(userData));
-    localStorage.setItem("prophoria_token", jwtToken);
-    api.defaults.headers.common["Authorization"] = `Bearer ${jwtToken}`;
+    setToken(authToken);
+    localStorage.setItem(TOKEN_KEY, authToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    api.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("prophoria_user");
-    localStorage.removeItem("prophoria_token");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     delete api.defaults.headers.common["Authorization"];
+    window.location.href = "/login";
+  };
+
+  const isAuthenticated = !!token;
+
+  const hasRole = (role) => {
+    return user?.role === role;
   };
 
   const value = {
     user,
     token,
-    isAuthenticated: !!user,
     isLoading,
+    isAuthenticated,
     login,
     logout,
+    hasRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -56,3 +73,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;

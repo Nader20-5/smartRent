@@ -1,78 +1,35 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { login as loginApi } from "../../services/authService";
+import { login as loginService } from "../../services/authService";
 import { ROLES } from "../../utils/constants";
-import {
-  FaBuilding,
-  FaEnvelope,
-  FaLock,
-  FaSignInAlt,
-  FaEye,
-  FaEyeSlash,
-  FaInfoCircle,
-} from "react-icons/fa";
-
-/*
- ┌──────────────────────────────────────────────────────┐
- │  TEST CREDENTIALS                                    │
- │  ─────────────────                                   │
- │  Tenant:   tenant@test.com   / password123           │
- │  Landlord: landlord@test.com / password123           │
- │  Admin:    admin@test.com    / password123            │
- └──────────────────────────────────────────────────────┘
-*/
-const TEST_USERS = {
-  "tenant@test.com": {
-    id: 100,
-    fullName: "Alex Tenant",
-    email: "tenant@test.com",
-    role: ROLES.TENANT,
-    profileImage:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face",
-  },
-  "landlord@test.com": {
-    id: 101,
-    fullName: "Sarah Landlord",
-    email: "landlord@test.com",
-    role: ROLES.LANDLORD,
-    profileImage:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
-  },
-  "admin@test.com": {
-    id: 102,
-    fullName: "Max Admin",
-    email: "admin@test.com",
-    role: ROLES.ADMIN,
-    profileImage:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-  },
-};
-
-const TEST_PASSWORD = "password123";
-const FAKE_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdC10b2tlbi1wcm9waG9yaWE";
+import "./Login.css";
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
   // Redirect if already logged in
   if (isAuthenticated) {
-    navigate("/", { replace: true });
-    return null;
+    return <Navigate to="/" replace />;
   }
+
+  const quickLogin = (testEmail) => {
+    setEmail(testEmail);
+    setPassword("password123");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       setError("Please fill in all fields.");
       return;
     }
@@ -80,177 +37,188 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Call actual backend
-      const result = await loginApi({ email, password });
-      
-      // Inject the token and user from backend into the context
-      login(result.user, result.token);
-      
-      // Redirect based on role
-      if (result.user.role === ROLES.LANDLORD) {
-        navigate("/landlord/dashboard");
-      } else if (result.user.role === ROLES.ADMIN) {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/");
+      const data = await loginService({ email, password });
+      login(data.token, data.user);
+
+      switch (data.user.role) {
+        case ROLES.ADMIN:
+          navigate("/admin/dashboard", { replace: true });
+          break;
+        case ROLES.LANDLORD:
+          navigate("/landlord/dashboard", { replace: true });
+          break;
+        case ROLES.TENANT:
+          navigate("/", { replace: true });
+          break;
+        default:
+          navigate("/", { replace: true });
       }
     } catch (err) {
-      setError(
+      const message =
         err.response?.data?.message ||
-        "Invalid email or password. Check the test credentials below."
-      );
+        err.response?.data?.title ||
+        err.response?.data ||
+        "Invalid email or password. Please try again.";
+      setError(typeof message === "string" ? message : "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const quickLogin = (email) => {
-    setEmail(email);
-    setPassword(TEST_PASSWORD);
-  };
-
   return (
-    <div className="auth-page">
-      <div className="auth-container">
-        {/* ── Left: Branding Panel ── */}
-        <div className="auth-brand-panel">
-          <div className="auth-brand-content">
-            <div className="auth-brand-logo">
-              <FaBuilding className="auth-brand-logo-icon" />
-              <span>Prophoria</span>
+    <div className="login-page">
+      {/* ═══════ LEFT BRANDED PANEL ═══════ */}
+      <div className="login-brand-panel">
+        <div className="brand-content">
+          <div className="brand-logo-large">SmartRent</div>
+          <p className="brand-tagline">
+            The smarter way to manage your rental properties and find your perfect home.
+          </p>
+
+          <div className="brand-features">
+            <div className="brand-feature">
+              <div className="brand-feature-icon">🏠</div>
+              <span>Browse thousands of verified properties</span>
             </div>
-            <h1 className="auth-brand-headline">
-              Premium Living, <br />
-              Simplified.
-            </h1>
-            <p className="auth-brand-text">
-              Discover, manage, and experience premium rental properties — all
-              in one beautifully crafted platform.
+            <div className="brand-feature">
+              <div className="brand-feature-icon">🔒</div>
+              <span>Secure and verified landlords</span>
+            </div>
+            <div className="brand-feature">
+              <div className="brand-feature-icon">⚡</div>
+              <span>Instant booking and visit scheduling</span>
+            </div>
+          </div>
+
+          <div className="brand-stats">
+            <div className="brand-stat">
+              <div className="brand-stat-number">12K+</div>
+              <div className="brand-stat-label">Users</div>
+            </div>
+            <div className="brand-stat">
+              <div className="brand-stat-number">3K+</div>
+              <div className="brand-stat-label">Properties</div>
+            </div>
+            <div className="brand-stat">
+              <div className="brand-stat-number">98%</div>
+              <div className="brand-stat-label">Satisfaction</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════ RIGHT FORM PANEL ═══════ */}
+      <div className="login-form-panel">
+        <div className="login-form-wrapper">
+          <div className="login-mobile-logo">SMARTRENT</div>
+
+          <h1 className="login-heading">Welcome Back</h1>
+          <p className="login-subheading">Please enter your details to sign in.</p>
+
+          {error && (
+            <div className="login-error">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="8" fill="#dc2626"/>
+                <path d="M8 4.5v4M8 10.5v.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              {error}
+            </div>
+          )}
+
+          <form className="login-form" onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="login-email">Email Address</label>
+              <div className="input-wrapper">
+                <span className="input-icon-left">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/>
+                  </svg>
+                </span>
+                <input id="login-email" type="email" className="form-input" placeholder="name@example.com"
+                  value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="form-label-row">
+                <label className="form-label" htmlFor="login-password">Password</label>
+                <span className="forgot-link">Forgot Password?</span>
+              </div>
+              <div className="input-wrapper">
+                <span className="input-icon-left">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                </span>
+                <input id="login-password" type={showPassword ? "text" : "password"}
+                  className="form-input input-with-right-icon" placeholder="••••••••"
+                  value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+                <button type="button" className="input-icon-right"
+                  onClick={() => setShowPassword(!showPassword)} tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}>
+                  {showPassword ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="login-btn" disabled={isLoading} id="login-submit-btn">
+              {isLoading ? <span className="spinner"></span> : "Sign In"}
+            </button>
+          </form>
+
+          <div className="divider">
+            <span className="divider-line"></span>
+            <span className="divider-text">OR</span>
+            <span className="divider-line"></span>
+          </div>
+
+          <div className="register-link-row">
+            Don't have an account?{" "}
+            <Link to="/register">Create Account →</Link>
+          </div>
+
+          {/* ── Test Credentials Quick Login ── */}
+          <div className="test-credentials" id="test-credentials">
+            <div className="test-credentials-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+              </svg>
+              <span>Quick Login — Test Accounts</span>
+            </div>
+            <div className="test-credentials-grid">
+              <button type="button" className="test-account-btn" onClick={() => quickLogin("tenant@test.com")}>
+                <span className="test-account-role tenant">Tenant</span>
+                <span className="test-account-email">tenant@test.com</span>
+              </button>
+              <button type="button" className="test-account-btn" onClick={() => quickLogin("landlord@test.com")}>
+                <span className="test-account-role landlord">Landlord</span>
+                <span className="test-account-email">landlord@test.com</span>
+              </button>
+              <button type="button" className="test-account-btn" onClick={() => quickLogin("admin@test.com")}>
+                <span className="test-account-role admin">Admin</span>
+                <span className="test-account-email">admin@test.com</span>
+              </button>
+            </div>
+            <p className="test-credentials-hint">
+              Password for all: <code>password123</code>
             </p>
           </div>
-          <div className="auth-brand-shape auth-brand-shape-1" />
-          <div className="auth-brand-shape auth-brand-shape-2" />
-        </div>
 
-        {/* ── Right: Form Panel ── */}
-        <div className="auth-form-panel">
-          <div className="auth-form-wrapper">
-            <h2 className="auth-form-title">Welcome Back</h2>
-            <p className="auth-form-subtitle">
-              Sign in to your account to continue
-            </p>
-
-            {error && (
-              <div className="auth-error" id="login-error">
-                {error}
-              </div>
-            )}
-
-            <form className="auth-form" onSubmit={handleSubmit} id="login-form">
-              <div className="form-group">
-                <label className="form-label" htmlFor="login-email">
-                  Email Address
-                </label>
-                <div className="auth-input-wrapper">
-                  <FaEnvelope className="auth-input-icon" />
-                  <input
-                    type="email"
-                    id="login-email"
-                    className="form-input auth-input"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="login-password">
-                  Password
-                </label>
-                <div className="auth-input-wrapper">
-                  <FaLock className="auth-input-icon" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="login-password"
-                    className="form-input auth-input"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="auth-password-toggle"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label="Toggle password visibility"
-                  >
-                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary btn-lg auth-submit-btn"
-                disabled={isLoading}
-                id="login-submit-btn"
-              >
-                {isLoading ? (
-                  <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} />
-                ) : (
-                  <>
-                    <FaSignInAlt /> Sign In
-                  </>
-                )}
-              </button>
-            </form>
-
-            <p className="auth-switch-text">
-              Don't have an account?{" "}
-              <Link to="/register" className="auth-switch-link">
-                Create Account
-              </Link>
-            </p>
-
-            {/* ── Test Credentials Box ── */}
-            <div className="auth-test-credentials" id="test-credentials">
-              <div className="auth-test-header">
-                <FaInfoCircle className="auth-test-icon" />
-                <span>Quick Login — Test Accounts</span>
-              </div>
-              <div className="auth-test-accounts">
-                <button
-                  type="button"
-                  className="auth-test-account"
-                  onClick={() => quickLogin("tenant@test.com")}
-                >
-                  <span className="auth-test-role">Tenant</span>
-                  <span className="auth-test-email">tenant@test.com</span>
-                </button>
-                <button
-                  type="button"
-                  className="auth-test-account"
-                  onClick={() => quickLogin("landlord@test.com")}
-                >
-                  <span className="auth-test-role">Landlord</span>
-                  <span className="auth-test-email">landlord@test.com</span>
-                </button>
-                <button
-                  type="button"
-                  className="auth-test-account"
-                  onClick={() => quickLogin("admin@test.com")}
-                >
-                  <span className="auth-test-role">Admin</span>
-                  <span className="auth-test-email">admin@test.com</span>
-                </button>
-              </div>
-              <p className="auth-test-hint">
-                Password for all: <code>password123</code>
-              </p>
+          <div className="login-footer">
+            <p className="login-footer-copy">© 2024 SmartRent. All rights reserved.</p>
+            <div className="login-footer-links">
+              <a href="#privacy">Privacy Policy</a>
+              <a href="#terms">Terms of Service</a>
             </div>
           </div>
         </div>
