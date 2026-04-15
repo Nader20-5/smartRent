@@ -1,0 +1,16 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/SmartRent.API/.vs/SmartRent.API/config/applicationhost.config
+/SmartRent.API/.vs/SmartRent.API/CopilotIndices/17.14.1641.39856/CodeChunks.db
+/SmartRent.API/.vs/SmartRent.API/CopilotIndices/17.14.1641.39856/SemanticSymbols.db
+/SmartRent.API/.vs/SmartRent.API/DesignTimeBuild/.dtbcache.v2
+/SmartRent.API/.vs/SmartRent.API/CopilotIndices/17.14.1641.39856
+/SmartRent.API/.vs/SmartRent.API/FileContentIndex
+/SmartRent.API/.vs/SmartRent.API/v17
+/SmartRent.API/obj/Debug/net8.0/EndpointInfo
+/SmartRent.API/obj/Release/net8.0
+/SmartRent.API/Properties
+/SmartRent.API
