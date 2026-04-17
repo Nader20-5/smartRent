@@ -141,5 +141,10 @@ namespace SmartRent.API.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
         }
+
+        internal async Task SaveChangesAsync()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

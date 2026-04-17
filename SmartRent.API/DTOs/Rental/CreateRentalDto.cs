@@ -1,18 +1,23 @@
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace SmartRent.API.DTOs.Rental
 {
     public class CreateRentalDto
     {
-        [Required]
+        [Required(ErrorMessage = "Property ID is required.")]
         public int PropertyId { get; set; }
 
-        [MaxLength(1000)]
+        [MaxLength(1000, ErrorMessage = "Cover letter cannot exceed 1000 characters.")]
         public string? CoverLetter { get; set; }
 
-        [Range(0, double.MaxValue)]
+        [Range(0, double.MaxValue, ErrorMessage = "Proposed rent must be a positive value.")]
         public decimal? ProposedRent { get; set; }
 
+        [DataType(DataType.Date)]
         public DateTime? MoveInDate { get; set; }
+
+        [Required(ErrorMessage = "Please upload at least one supporting document (ID, Salary, etc.).")]
+        public List<IFormFile> Documents { get; set; } = new List<IFormFile>();
     }
 }
