@@ -1,44 +1,72 @@
 import api from "./api";
 
-// --- استعلامات المستأجر (Tenants) ---
+// ==========================================
+// 1. استعلامات الزيارات (Visits Section)
+// ==========================================
 
-// إرسال طلب زيارة جديد
 export const createVisit = async (data) => {
   const response = await api.post("/visits", data);
   return response.data;
 };
 
-// جلب طلبات الزيارة الخاصة بي كمستأجر
 export const getMyVisits = async (params) => {
   const response = await api.get("/visits/my-visits", { params });
   return response.data;
 };
 
-// إلغاء طلب زيارة
 export const cancelVisit = async (id) => {
-  // تصحيح: يجب استخدام العلامات المائلة المائلة للخلف ` ` بدلاً من العادية لتمرير الـ id
   const response = await api.put(`/visits/${id}/cancel`);
   return response.data;
 };
 
-// --- استعلامات الملاك (Landlords) ---
-
-// جلب طلبات الزيارة الواردة للمالك
 export const getLandlordVisits = async (params) => {
   const response = await api.get("/visits/landlord", { params });
   return response.data;
 };
 
-// قبول طلب زيارة
 export const approveVisit = async (id) => {
-  // تصحيح: استخدام ` ` لتمرير المتغير id في المسار
   const response = await api.put(`/visits/${id}/approve`);
   return response.data;
 };
 
-// رفض طلب زيارة مع ذكر السبب
 export const rejectVisit = async (id, reason) => {
-  // تصحيح: استخدام ` ` وإرسال الـ reason ككائن (Object)
   const response = await api.put(`/visits/${id}/reject`, { reason });
+  return response.data;
+};
+
+
+// ==========================================
+// 2. استعلامات طلبات الإيجار (Rentals Section) - التاسك الجديد
+// ==========================================
+
+// تقديم طلب إيجار (لاحظي إننا بنبعت formData عشان الملفات)
+export const createRentalApplication = async (formData) => {
+  const response = await api.post("/rentals", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+  return response.data;
+};
+
+// جلب طلبات الإيجار الخاصة بي (للمستأجر)
+export const getMyApplications = async (params) => {
+  const response = await api.get("/rentals/my-applications", { params });
+  return response.data;
+};
+
+// جلب طلبات الإيجار الواردة (للمالك)
+export const getLandlordApplications = async (params) => {
+  const response = await api.get("/rentals/landlord", { params });
+  return response.data;
+};
+
+// قبول طلب الإيجار
+export const approveRental = async (id) => {
+  const response = await api.put(`/rentals/${id}/approve`);
+  return response.data;
+};
+
+// رفض طلب الإيجار مع السبب
+export const rejectRental = async (id, reason) => {
+  const response = await api.put(`/rentals/${id}/reject`, { reason });
   return response.data;
 };

@@ -68,12 +68,12 @@ const VisitRequests = () => {
         <nav style={{ fontSize: '12px', color: '#bdc3c7', marginBottom: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>
           DASHBOARD / VISIT REQUESTS
         </nav>
-        <h1 style={{ color: '#1a237e', fontWeight: '800', fontSize: '36px', marginBottom: '10px' }}>Rental Requests</h1>
+        <h1 style={{ color: '#1a237e', fontWeight: '800', fontSize: '36px', marginBottom: '10px' }}>Visits Requests</h1>
         <p style={{ color: '#7f8c8d', marginBottom: '40px' }}>Review and manage site visit applications for your properties.</p>
 
         {/* Filter Tabs */}
         <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-          {['All', 'Pending', 'Accepted', 'Approved', 'Rejected'].map(statusOption => (
+          {['All', 'Pending', 'Accepted', 'Rejected'].map(statusOption => (
             <button 
               key={statusOption} 
               onClick={() => setFilter(statusOption)}
