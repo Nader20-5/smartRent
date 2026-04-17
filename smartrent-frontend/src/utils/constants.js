@@ -1,5 +1,5 @@
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-export const SIGNALR_URL = import.meta.env.VITE_SIGNALR_URL || "http://localhost:5000/hubs/notifications";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3514/api";
+export const SIGNALR_URL = import.meta.env.VITE_SIGNALR_URL || "http://localhost:3514/hubs/notifications";
 
 export const ROLES = {
   ADMIN: "Admin",

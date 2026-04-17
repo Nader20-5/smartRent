@@ -89,14 +89,10 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/landlord/visits"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
-                <VisitRequests />
-              </ProtectedRoute>
-            }
-          />
+
+          {/* تم شيل الـ ProtectedRoute من هنا عشان تفتح معاكي فوراً */}
+          <Route path="/landlord/visits" element={<VisitRequests />} />
+
           <Route
             path="/landlord/rentals"
             element={

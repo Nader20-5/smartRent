@@ -22,14 +22,13 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor — handle 401 globally
+/// Response interceptor — handle 401 globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      // شيلنا السطور اللي بتعمل logout و redirect
+      console.warn("401 Error: Redirect disabled for testing");
     }
     return Promise.reject(error);
   }
