@@ -32,5 +32,7 @@ namespace SmartRent.API.Models
         public int? RelatedId { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? Link { get; set; }
+
     }
 }

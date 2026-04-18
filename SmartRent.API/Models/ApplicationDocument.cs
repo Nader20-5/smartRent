@@ -21,7 +21,7 @@ namespace SmartRent.API.Models
         public string DocumentUrl { get; set; } = string.Empty;
 
         [MaxLength(100)]
-        public string? DocumentType { get; set; } // NationalId, SalaryProof, BankStatement
+        public string? DocumentType { get; set; } 
 
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     }

@@ -136,7 +136,7 @@ namespace SmartRent.API.Services.Implementations
                     return ServiceResult<bool>.FailureResult("Only pending requests can be rejected.");
 
                 visit.Status = VisitStatus.Rejected;
-                visit.RejectionReason = dto.Reason;
+                visit.LandlordNote = dto.Reason;
                 visit.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
@@ -23,17 +23,19 @@ namespace SmartRent.API.Models
 
         [Required]
         [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; // Pending, Accepted, Rejected
+        public string Status { get; set; } = "Pending"; 
 
         [Required]
-        public DateTime StartDate { get; set; }
+        public DateTime MoveInDate { get; set; } 
 
-        [Required]
-        public DateTime EndDate { get; set; }
+        public DateTime? LeaseEndDate { get; set; } 
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]
-        public decimal MonthlyPrice { get; set; }
+        public decimal ProposedRent { get; set; }
+
+        [MaxLength(2000)]
+        public string? CoverLetter { get; set; } 
 
         public string? Notes { get; set; }
 
@@ -44,7 +46,6 @@ namespace SmartRent.API.Models
 
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation properties
         public ICollection<ApplicationDocument> Documents { get; set; } = new List<ApplicationDocument>();
     }
 }

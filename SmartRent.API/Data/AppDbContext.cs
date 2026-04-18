@@ -88,7 +88,7 @@ namespace SmartRent.API.Data
                       .HasForeignKey(r => r.TenantId)
                       .OnDelete(DeleteBehavior.NoAction);
 
-                entity.Property(r => r.MonthlyPrice).HasColumnType("decimal(10,2)");
+                entity.Property(r => r.ProposedRent).HasColumnType("decimal(10,2)");
             });
 
             // ApplicationDocument constraints

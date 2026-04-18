@@ -30,7 +30,7 @@ namespace SmartRent.API.Services.Implementations
             try
             {
                 var property = await _context.Properties
-                    .FirstOrDefaultAsync(p => p.Id == dto.PropertyId && p.IsAvailable);
+                    .FirstOrDefaultAsync(p => p.Id == dto.PropertyId && p.IsActive);
 
                 if (property is null)
                     return ServiceResult<RentalResponseDto>.FailureResult("Property is not available or doesn't exist.");
@@ -40,8 +40,8 @@ namespace SmartRent.API.Services.Implementations
                     PropertyId = dto.PropertyId,
                     TenantId = tenantId,
                     CoverLetter = dto.CoverLetter,
-                    ProposedRent = dto.ProposedRent,
-                    MoveInDate = dto.MoveInDate,
+                    ProposedRent = dto.ProposedRent ?? 0m,
+                    MoveInDate = dto.MoveInDate ?? DateTime.UtcNow,
                     Status = "Pending",
                     CreatedAt = DateTime.Now 
                 };
@@ -90,7 +90,6 @@ namespace SmartRent.API.Services.Implementations
                 _context.ApplicationDocuments.Add(new ApplicationDocument
                 {
                     RentalApplicationId = applicationId,
-                    DocumentName = file.FileName,
                     DocumentUrl = fileUrl,
                     DocumentType = documentType,
                     UploadedAt = DateTime.UtcNow
@@ -120,7 +119,7 @@ namespace SmartRent.API.Services.Implementations
 
                 application.Status = "Approved";
                 application.UpdatedAt = DateTime.UtcNow;
-                application.Property.IsAvailable = false;
+                application.Property.IsActive = false;
 
                 await RejectOtherPendingApplicationsAsync(application.PropertyId, applicationId);
 
@@ -145,6 +144,7 @@ namespace SmartRent.API.Services.Implementations
             }
         }
 
+
         public async Task<ServiceResult<bool>> RejectAsync(int landlordId, int applicationId, RejectDto dto)
         {
             try
@@ -152,7 +152,6 @@ namespace SmartRent.API.Services.Implementations
                 var application = await _context.RentalApplications
                     .Include(a => a.Property)
                     .FirstOrDefaultAsync(a => a.Id == applicationId);
-
 
                 if (application is null)
                     return ServiceResult<bool>.FailureResult("Application not found.");
@@ -166,12 +165,16 @@ namespace SmartRent.API.Services.Implementations
 
                 await _context.SaveChangesAsync();
 
-                await _notificationService.CreateAsync(
-                    userId: application.TenantId,
-                    title: "Rental Application Update",
-                    message: $"Unfortunately, your application for '{application.Property.Title}' was rejected. Reason: {dto.Reason}",
-                    link: application.Id.ToString()
-                );
+                try
+                {
+                    await _notificationService.CreateAsync(
+                        userId: application.TenantId,
+                        title: "Rental Application Update",
+                        message: $"Unfortunately, your application for '{application.Property.Title}' was rejected. Reason: {dto.Reason}",
+                        link: application.Id.ToString()
+                    );
+                }
+                catch { }
 
                 return ServiceResult<bool>.SuccessResult(true);
             }
@@ -218,26 +221,13 @@ namespace SmartRent.API.Services.Implementations
 
             var items = applications.Select(a => {
                 var dto = MapToResponseDto(a, a.Property.Title, a.TenantId);
-                dto.TenantName = a.Tenant.FirstName;
+                dto.TenantName = a.Tenant.FullName;
                 return dto;
             }).ToList();
 
             return ServiceResult<PagedResult<RentalResponseDto>>.SuccessResult(
                 BuildPagedResult(items, totalCount, pagination));
         }
-
-        public async Task<ServiceResult<bool>> UploadAdditionalDocumentAsync(int tenantId, int applicationId, IFormFile file, string documentType)
-        {
-            var application = await _context.RentalApplications
-                .FirstOrDefaultAsync(a => a.Id == applicationId && a.TenantId == tenantId);
-
-            if (application is null)
-                return ServiceResult<bool>.FailureResult("Rental application not found.");
-
-            await UploadDocumentsAndGetUrlsAsync(application.Id, new[] { file }, documentType);
-            return ServiceResult<bool>.SuccessResult(true);
-        }
-
 
         private async Task RejectOtherPendingApplicationsAsync(int propertyId, int approvedApplicationId)
         {
@@ -258,8 +248,7 @@ namespace SmartRent.API.Services.Implementations
                         userId: app.TenantId,
                         title: "Rental Application Update",
                         message: $"The property '{app.Property.Title}' is no longer available as it has been rented to another applicant.",
-                        type: "RentalSystemUpdate",
-                        link: $"/tenant/rentals/{app.Id}"
+                        link: app.Id.ToString()
                     );
                 }
                 catch (Exception ex)
@@ -268,8 +257,6 @@ namespace SmartRent.API.Services.Implementations
                     continue;
                 }
             }
-
-            await _context.SaveChangesAsync();
         }
 
         private static RentalResponseDto MapToResponseDto(RentalApplication application, string propertyTitle, int tenantId)
@@ -281,8 +268,8 @@ namespace SmartRent.API.Services.Implementations
                 PropertyTitle = propertyTitle,
                 TenantId = tenantId,
                 Status = application.Status,
-                ProposedRent = application.ProposedRent,
-                MoveInDate = application.MoveInDate,
+                ProposedRent = application.ProposedRent, 
+                MoveInDate = application.MoveInDate,    
                 CreatedAt = application.CreatedAt,
                 DocumentUrls = application.Documents?.Select(d => d.DocumentUrl).ToList() ?? new List<string>()
             };
@@ -297,6 +284,11 @@ namespace SmartRent.API.Services.Implementations
                 PageNumber = pagination.PageNumber,
                 PageSize = pagination.PageSize
             };
+        }
+
+        public Task<ServiceResult<bool>> UploadAdditionalDocumentAsync(int tenantId, int applicationId, IFormFile file, string documentType)
+        {
+            throw new NotImplementedException();
         }
     }
 }

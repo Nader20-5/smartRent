@@ -8,6 +8,7 @@ using SmartRent.API.Services.Interfaces;
 
 namespace SmartRent.API.Services.Implementations
 {
+
     public class NotificationService : INotificationService
     {
         private readonly AppDbContext _context;
@@ -23,16 +24,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var notification = new Notification
-                {
-                    UserId = userId,
-                    Title = title,
-                    Message = message,
-                    Type = type,
-                    Link = link,
-                    IsRead = false,
-                    CreatedAt = DateTime.UtcNow
-                };
+                var notification = new Notification { UserId = userId, Title = title, Message = message, Type = type, Link = link, IsRead = false, CreatedAt = DateTime.UtcNow };
 
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
@@ -119,24 +111,10 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var unreadNotifications = await _context.Notifications
+                await _context.Notifications
                     .Where(n => n.UserId == userId && !n.IsRead)
-                    .ToListAsync();
-
-                // 2. لو مفيش إشعارات غير مقروءة، نرجع Success فوراً بدل ما نتعب الداتا بيز
-                if (!unreadNotifications.Any())
-                {
-                    return ServiceResult<bool>.SuccessResult(true);
-                }
-
-                // 3. نغير حالة كل الإشعارات لـ مقروءة
-                foreach (var notification in unreadNotifications)
-                {
-                    notification.IsRead = true;
-                }
-
-                // 4. حفظ كل التغييرات في خبطة واحدة (Atomic Transaction)
-                await _context.SaveChangesAsync();
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(n => n.IsRead, true));
 
                 return ServiceResult<bool>.SuccessResult(true);
             }
@@ -157,7 +135,7 @@ namespace SmartRent.API.Services.Implementations
             }
             catch (Exception ex)
             {
-                return ServiceResult<int>.FailureResult($"Error fetching unread count: {ex.Message}");
+                return ServiceResult<int>.FailureResult($"Database error: {ex.Message}");
             }
         }
     }
