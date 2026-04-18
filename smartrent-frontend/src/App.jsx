@@ -4,8 +4,10 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 // Auth pages
 import Login from "./pages/auth/Login";
@@ -35,27 +37,29 @@ import { ROLES } from "./utils/constants";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Navbar />
-        <ToastContainer position="top-right" autoClose={3000} />
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/property/:id" element={<PropertyDetails />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Navbar />
+          <ToastContainer position="top-right" autoClose={3000} />
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<><Home /><Footer /></>} />
+            <Route path="/property/:id" element={<><PropertyDetails /><Footer /></>} />
 
-          {/* Admin routes */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+            {/* Admin routes */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
 
+<<<<<<< HEAD
           {/* Landlord routes */}
           <Route
             path="/landlord/dashboard"
@@ -101,54 +105,106 @@ function App() {
               </ProtectedRoute>
             }
           />
+=======
+            {/* Landlord routes */}
+            <Route
+              path="/landlord/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
+                  <LandlordDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/landlord/properties"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
+                  <MyProperties />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/landlord/properties/add"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
+                  <AddProperty />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/landlord/properties/edit/:id"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
+                  <EditProperty />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/landlord/visits"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
+                  <VisitRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/landlord/rentals"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
+                  <RentalRequests />
+                </ProtectedRoute>
+              }
+            />
+>>>>>>> Pair-1
 
-          {/* Tenant routes */}
-          <Route
-            path="/book-visit/:propertyId"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
-                <BookVisit />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/apply-rental/:propertyId"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
-                <ApplyRental />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-visits"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
-                <MyVisits />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-applications"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
-                <MyApplications />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/favorites"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
-                <Favorites />
-              </ProtectedRoute>
-            }
-          />
+            {/* Tenant routes */}
+            <Route
+              path="/book-visit/:propertyId"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
+                  <BookVisit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/apply-rental/:propertyId"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
+                  <ApplyRental />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-visits"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
+                  <MyVisits />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-applications"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
+                  <MyApplications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/favorites"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
+                  <><Favorites /><Footer /></>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
