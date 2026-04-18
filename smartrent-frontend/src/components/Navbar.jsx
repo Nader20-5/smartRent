@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { ROLES } from "../utils/constants";
+import NotificationBell from './NotificationBell';
 import {
   FaBuilding,
   FaHeart,
@@ -21,7 +22,8 @@ const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  // Destructure 'token' from useAuth here
+  const { user, isAuthenticated, logout, token } = useAuth(); 
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -34,7 +36,6 @@ const Navbar = () => {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
-  // Hide navbar on pages that have their own integrated navigation
   const hiddenPaths = ["/login", "/register", "/admin/dashboard", "/landlord/dashboard"];
   const isDashboardPage = location.pathname.startsWith("/landlord") || location.pathname.startsWith("/admin");
   if (hiddenPaths.includes(location.pathname) || (isDashboardPage && isAuthenticated)) return null;
@@ -106,6 +107,9 @@ const Navbar = () => {
 
           {isAuthenticated ? (
             <>
+              {/* Placement of the Notification Bell */}
+              {token && <NotificationBell token={token} />} 
+              
               <div className="navbar-user-info">
                 <FaUserCircle className="navbar-user-avatar" />
                 <span className="navbar-user-name">{user?.fullName}</span>
