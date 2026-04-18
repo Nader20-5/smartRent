@@ -25,15 +25,6 @@ api.interceptors.request.use(
   }
 );
 
-<<<<<<< HEAD
-/// Response interceptor — handle 401 globally
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // شيلنا السطور اللي بتعمل logout و redirect
-      console.warn("401 Error: Redirect disabled for testing");
-=======
 // Response interceptor — handle 401 globally
 // Skip redirect for auth endpoints (login/register) so their own error handling works
 api.interceptors.response.use(
@@ -44,7 +35,6 @@ api.interceptors.response.use(
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       window.location.href = "/login";
->>>>>>> Pair-1
     }
     return Promise.reject(error);
   }

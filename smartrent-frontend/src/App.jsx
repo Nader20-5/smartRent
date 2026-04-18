@@ -59,53 +59,6 @@ function App() {
               }
             />
 
-<<<<<<< HEAD
-          {/* Landlord routes */}
-          <Route
-            path="/landlord/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
-                <LandlordDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/landlord/properties"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
-                <MyProperties />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/landlord/properties/add"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
-                <AddProperty />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/landlord/properties/edit/:id"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
-                <EditProperty />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* تم شيل الـ ProtectedRoute من هنا عشان تفتح معاكي فوراً */}
-          <Route path="/landlord/visits" element={<VisitRequests />} />
-
-          <Route
-            path="/landlord/rentals"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.LANDLORD]}>
-                <RentalRequests />
-              </ProtectedRoute>
-            }
-          />
-=======
             {/* Landlord routes */}
             <Route
               path="/landlord/dashboard"
@@ -155,7 +108,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
->>>>>>> Pair-1
 
             {/* Tenant routes */}
             <Route
