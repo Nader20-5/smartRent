@@ -7,6 +7,10 @@ import {
   getPendingProperties,
   approveProperty,
   rejectProperty,
+  getDashboardStats,
+  getAllUsers,
+  getAllProperties,
+  toggleUserStatus,
 } from "../../services/adminService";
 import "./AdminDashboard.css";
 
@@ -49,16 +53,25 @@ const AdminDashboard = () => {
   // Data state
   const [landlords, setLandlords] = useState([]);
   const [properties, setProperties] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [allProperties, setAllProperties] = useState([]);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeLandlords: 0,
+    totalProperties: 0,
+    pendingApprovals: 0,
+  });
+  
   const [loading, setLoading] = useState(true);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState("landlords");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // Alert
-  const [alert, setAlert] = useState(null); // { type: 'success' | 'error', message: '' }
+  const [alert, setAlert] = useState(null);
 
   // Action in progress
-  const [actionInProgress, setActionInProgress] = useState(null); // "approve-{id}" or "reject-{id}"
+  const [actionInProgress, setActionInProgress] = useState(null);
 
   // Removing row animation
   const [removingId, setRemovingId] = useState(null);
@@ -67,12 +80,18 @@ const AdminDashboard = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [landlordData, propertyData] = await Promise.all([
+      const [landlordData, pendingPropData, statsData, usersData, allPropsData] = await Promise.all([
         getPendingLandlords(),
         getPendingProperties(),
+        getDashboardStats(),
+        getAllUsers(1, 100),
+        getAllProperties(1, 100),
       ]);
       setLandlords(Array.isArray(landlordData) ? landlordData : []);
-      setProperties(Array.isArray(propertyData) ? propertyData : []);
+      setProperties(Array.isArray(pendingPropData) ? pendingPropData : []);
+      setStats(statsData || { totalUsers: 0, activeLandlords: 0, totalProperties: 0, pendingApprovals: 0 });
+      setAllUsers(usersData?.items || []);
+      setAllProperties(Array.isArray(allPropsData) ? allPropsData : []);
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
     } finally {
@@ -92,7 +111,7 @@ const AdminDashboard = () => {
     }
   }, [alert]);
 
-  // ─── Landlord Actions ───────────────────────
+  // ─── Actions ───────────────────────
   const handleApproveLandlord = async (id, name) => {
     setActionInProgress(`approve-landlord-${id}`);
     try {
@@ -102,6 +121,7 @@ const AdminDashboard = () => {
         setLandlords((prev) => prev.filter((l) => l.id !== id));
         setRemovingId(null);
         setAlert({ type: "success", message: `Landlord "${name}" successfully approved.` });
+        fetchData(); // refresh stats quietly
       }, 350);
     } catch (error) {
       setAlert({ type: "error", message: `Failed to approve landlord "${name}".` });
@@ -119,6 +139,7 @@ const AdminDashboard = () => {
         setLandlords((prev) => prev.filter((l) => l.id !== id));
         setRemovingId(null);
         setAlert({ type: "success", message: `Landlord "${name}" has been rejected.` });
+        fetchData(); // refresh stats quietly
       }, 350);
     } catch (error) {
       setAlert({ type: "error", message: `Failed to reject landlord "${name}".` });
@@ -127,7 +148,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ─── Property Actions ──────────────────────
   const handleApproveProperty = async (id, title) => {
     setActionInProgress(`approve-property-${id}`);
     try {
@@ -137,6 +157,7 @@ const AdminDashboard = () => {
         setProperties((prev) => prev.filter((p) => p.id !== id));
         setRemovingId(null);
         setAlert({ type: "success", message: `Property "${title}" successfully approved.` });
+        fetchData();
       }, 350);
     } catch (error) {
       setAlert({ type: "error", message: `Failed to approve property "${title}".` });
@@ -154,6 +175,7 @@ const AdminDashboard = () => {
         setProperties((prev) => prev.filter((p) => p.id !== id));
         setRemovingId(null);
         setAlert({ type: "success", message: `Property "${title}" has been rejected.` });
+        fetchData();
       }, 350);
     } catch (error) {
       setAlert({ type: "error", message: `Failed to reject property "${title}".` });
@@ -162,8 +184,18 @@ const AdminDashboard = () => {
     }
   };
 
-  // ─── Stats (dynamic counts) ─────────────────
-  const totalPending = landlords.length + properties.length;
+  const handleToggleUserStatus = async (id, name) => {
+    setActionInProgress(`toggle-user-${id}`);
+    try {
+      await toggleUserStatus(id);
+      setAllUsers((prev) => prev.map(u => u.id === id ? { ...u, isActive: !u.isActive } : u));
+      setAlert({ type: "success", message: `User "${name}" status toggled successfully.` });
+    } catch (error) {
+      setAlert({ type: "error", message: `Failed to toggle status for user "${name}".` });
+    } finally {
+      setActionInProgress(null);
+    }
+  };
 
   return (
     <div className="admin-layout">
@@ -174,10 +206,9 @@ const AdminDashboard = () => {
         <div className="sidebar-logo">SmartRent</div>
 
         <nav className="sidebar-nav">
-          {/* Dashboard */}
           <button
-            className="sidebar-nav-item active"
-            onClick={() => {}}
+            className={`sidebar-nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+            onClick={() => setActiveTab("dashboard")}
             id="sidebar-dashboard"
           >
             <span className="sidebar-nav-icon">
@@ -191,9 +222,8 @@ const AdminDashboard = () => {
             Dashboard
           </button>
 
-          {/* Pending Landlords */}
           <button
-            className={`sidebar-nav-item ${activeTab === "landlords" ? "" : ""}`}
+            className={`sidebar-nav-item ${activeTab === "landlords" ? "active" : ""}`}
             onClick={() => setActiveTab("landlords")}
             id="sidebar-pending-landlords"
           >
@@ -209,9 +239,8 @@ const AdminDashboard = () => {
             )}
           </button>
 
-          {/* Pending Properties */}
           <button
-            className={`sidebar-nav-item`}
+            className={`sidebar-nav-item ${activeTab === "properties" ? "active" : ""}`}
             onClick={() => setActiveTab("properties")}
             id="sidebar-pending-properties"
           >
@@ -227,12 +256,14 @@ const AdminDashboard = () => {
             )}
           </button>
 
-          {/* Divider + Management Section */}
           <div className="sidebar-divider"></div>
           <div className="sidebar-section-label">Management</div>
 
-          {/* All Users */}
-          <button className="sidebar-nav-item" id="sidebar-all-users">
+          <button 
+            className={`sidebar-nav-item ${activeTab === "all-users" ? "active" : ""}`} 
+            onClick={() => setActiveTab("all-users")}
+            id="sidebar-all-users"
+          >
             <span className="sidebar-nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -244,8 +275,11 @@ const AdminDashboard = () => {
             All Users
           </button>
 
-          {/* All Properties */}
-          <button className="sidebar-nav-item" id="sidebar-all-properties">
+          <button 
+            className={`sidebar-nav-item ${activeTab === "all-properties" ? "active" : ""}`} 
+            onClick={() => setActiveTab("all-properties")}
+            id="sidebar-all-properties"
+          >
             <span className="sidebar-nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="1" y="6" width="22" height="16" rx="2"/>
@@ -258,7 +292,6 @@ const AdminDashboard = () => {
           </button>
         </nav>
 
-        {/* Logout */}
         <div className="sidebar-bottom">
           <button className="sidebar-logout" onClick={logout} id="sidebar-logout">
             <span className="sidebar-nav-icon">
@@ -284,15 +317,6 @@ const AdminDashboard = () => {
             <p>System overview and verification requests.</p>
           </div>
           <div className="admin-topbar-right">
-            {/* Bell */}
-            <div className="topbar-bell" id="topbar-notifications">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              <span className="topbar-bell-dot"></span>
-            </div>
-            {/* User */}
             <div className="topbar-user">
               <div className="topbar-user-info">
                 <div className="topbar-user-name">{user?.fullName || "Admin"}</div>
@@ -309,91 +333,51 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* ─── Stats Row ─────────────────── */}
-        <div className="admin-stats">
-          <div className="stat-card green">
-            <div className="stat-label">Total Users</div>
-            <div className="stat-number">12,482</div>
-            <div className="stat-sub green">
-              <span className="stat-sub-icon">📈</span> 12% inc.
+        {/* ─── Stats Row (Only visible on Dashboard or Pending Tabs) ─────────────────── */}
+        {(activeTab === "dashboard" || activeTab === "landlords" || activeTab === "properties") && (
+          <div className="admin-stats">
+            <div className="stat-card green">
+              <div className="stat-label">Total Users</div>
+              <div className="stat-number">{stats.totalUsers}</div>
+              <div className="stat-sub green">
+                <span className="stat-sub-icon">📈</span> Live DB Stats
+              </div>
+            </div>
+
+            <div className="stat-card teal">
+              <div className="stat-label">Active Landlords</div>
+              <div className="stat-number">{stats.activeLandlords}</div>
+              <div className="stat-sub teal">
+                <span className="stat-sub-icon">✅</span> Live DB Stats
+              </div>
+            </div>
+
+            <div className="stat-card navy">
+              <div className="stat-label">Total Properties</div>
+              <div className="stat-number">{stats.totalProperties}</div>
+              <div className="stat-sub navy">
+                <span className="stat-sub-icon">🏠</span> Live DB Stats
+              </div>
+            </div>
+
+            <div className="stat-card red">
+              <div className="stat-label">Pending Approvals</div>
+              <div className="stat-number">{stats.pendingApprovals}</div>
+              <div className="stat-sub red">
+                <span className="stat-sub-icon">⚠️</span> Requires Action
+              </div>
             </div>
           </div>
-
-          <div className="stat-card teal">
-            <div className="stat-label">Active Landlords</div>
-            <div className="stat-number">843</div>
-            <div className="stat-sub teal">
-              <span className="stat-sub-icon">✅</span> +5 this week
-            </div>
-          </div>
-
-          <div className="stat-card navy">
-            <div className="stat-label">Total Properties</div>
-            <div className="stat-number">3,120</div>
-            <div className="stat-sub navy">
-              <span className="stat-sub-icon">🏠</span> 89% Occupied
-            </div>
-          </div>
-
-          <div className="stat-card red">
-            <div className="stat-label">Pending Approvals</div>
-            <div className="stat-number">{totalPending}</div>
-            <div className="stat-sub red">
-              <span className="stat-sub-icon">⚠️</span> Requires Action
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Tabs ───────────────────── */}
-        <div className="admin-tabs-container">
-          <div className="admin-tabs">
-            <button
-              className={`admin-tab ${activeTab === "landlords" ? "active" : ""}`}
-              onClick={() => setActiveTab("landlords")}
-              id="tab-pending-landlords"
-            >
-              Pending Landlords
-              <span className={`tab-badge ${activeTab === "landlords" ? "dark" : "gray"}`}>
-                {landlords.length}
-              </span>
-            </button>
-            <button
-              className={`admin-tab ${activeTab === "properties" ? "active" : ""}`}
-              onClick={() => setActiveTab("properties")}
-              id="tab-pending-properties"
-            >
-              Pending Properties
-              <span className={`tab-badge ${activeTab === "properties" ? "dark" : "gray"}`}>
-                {properties.length}
-              </span>
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* ─── Alert ──────────────────── */}
         {alert && (
           <div className={`admin-alert ${alert.type}`} id="admin-alert">
             <span className="admin-alert-icon">
-              {alert.type === "success" ? (
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                  <circle cx="11" cy="11" r="11" fill="#16a34a"/>
-                  <path d="M7 11.5l3 3 5-5.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              ) : (
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                  <circle cx="11" cy="11" r="11" fill="#dc2626"/>
-                  <path d="M11 6.5v5M11 14.5v.5" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              )}
+              {alert.type === "success" ? "✅" : "❌"}
             </span>
             <span className="admin-alert-text">{alert.message}</span>
-            <button
-              className="admin-alert-close"
-              onClick={() => setAlert(null)}
-              aria-label="Close alert"
-            >
-              ×
-            </button>
+            <button className="admin-alert-close" onClick={() => setAlert(null)}>×</button>
           </div>
         )}
 
@@ -402,19 +386,24 @@ const AdminDashboard = () => {
           {loading ? (
             <div className="admin-loading">
               <div className="admin-loading-spinner"></div>
-              <div className="admin-loading-text">Loading data...</div>
+              <div className="admin-loading-text">Loading dynamic data...</div>
             </div>
+          ) : activeTab === "dashboard" ? (
+             <div className="admin-empty">
+                <div className="admin-empty-icon">📊</div>
+                <div className="admin-empty-text">Welcome to the Admin Dashboard</div>
+                <div className="admin-empty-sub">Overview of the system health and key metrics. Navigate via sidebar.</div>
+             </div>
           ) : activeTab === "landlords" ? (
-            /* ─── Landlords Table ─── */
             landlords.length === 0 ? (
               <div className="admin-empty">
                 <div className="admin-empty-icon">✅</div>
                 <div className="admin-empty-text">No pending landlords</div>
-                <div className="admin-empty-sub">All landlord registrations have been reviewed.</div>
+                <div className="admin-empty-sub">All registration requests have been reviewed.</div>
               </div>
             ) : (
               <div className="admin-table-wrapper">
-                <table className="admin-table" id="landlords-table">
+                <table className="admin-table">
                   <thead>
                     <tr>
                       <th>Landlord</th>
@@ -425,10 +414,7 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody>
                     {landlords.map((landlord) => (
-                      <tr
-                        key={landlord.id}
-                        className={removingId === `landlord-${landlord.id}` ? "row-removing" : ""}
-                      >
+                      <tr key={landlord.id} className={removingId === `landlord-${landlord.id}` ? "row-removing" : ""}>
                         <td>
                           <div className="table-landlord-cell">
                             <div className="table-avatar">
@@ -453,22 +439,8 @@ const AdminDashboard = () => {
                         </td>
                         <td>
                           <div className="admin-actions">
-                            <button
-                              className="btn-approve"
-                              onClick={() => handleApproveLandlord(landlord.id, landlord.fullName)}
-                              disabled={!!actionInProgress}
-                              id={`approve-landlord-${landlord.id}`}
-                            >
-                              {actionInProgress === `approve-landlord-${landlord.id}` ? "..." : "Approve"}
-                            </button>
-                            <button
-                              className="btn-reject"
-                              onClick={() => handleRejectLandlord(landlord.id, landlord.fullName)}
-                              disabled={!!actionInProgress}
-                              id={`reject-landlord-${landlord.id}`}
-                            >
-                              {actionInProgress === `reject-landlord-${landlord.id}` ? "..." : "Reject"}
-                            </button>
+                            <button className="btn-approve" onClick={() => handleApproveLandlord(landlord.id, landlord.fullName)} disabled={!!actionInProgress}>Approve</button>
+                            <button className="btn-reject" onClick={() => handleRejectLandlord(landlord.id, landlord.fullName)} disabled={!!actionInProgress}>Reject</button>
                           </div>
                         </td>
                       </tr>
@@ -477,8 +449,7 @@ const AdminDashboard = () => {
                 </table>
               </div>
             )
-          ) : (
-            /* ─── Properties Table ─── */
+          ) : activeTab === "properties" ? (
             properties.length === 0 ? (
               <div className="admin-empty">
                 <div className="admin-empty-icon">🏠</div>
@@ -487,79 +458,126 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <div className="admin-table-wrapper">
-                <table className="admin-table" id="properties-table">
+                <table className="admin-table">
                   <thead>
                     <tr>
                       <th>Property</th>
                       <th>Location</th>
                       <th>Price</th>
-                      <th>Type</th>
                       <th>Landlord</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {properties.map((property) => (
-                      <tr
-                        key={property.id}
-                        className={removingId === `property-${property.id}` ? "row-removing" : ""}
-                      >
-                        <td>
+                      <tr key={property.id} className={removingId === `property-${property.id}` ? "row-removing" : ""}>
+                         <td>
                           <div className="table-property-cell">
-                            <div className="table-property-icon">🏢</div>
-                            <div>
-                              <div className="table-property-title">{property.title}</div>
-                              <div className="table-property-id">ID: #PR-{property.id}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{property.location || "—"}</td>
-                        <td>
-                          <span className="table-price">{formatPrice(property.price)}</span>
-                        </td>
-                        <td>
-                          <span className="table-type-badge">{property.propertyType}</span>
-                        </td>
-                        <td>{property.landlord?.fullName || "—"}</td>
-                        <td>
-                          <div className="admin-actions">
-                            <button
-                              className="btn-approve"
-                              onClick={() => handleApproveProperty(property.id, property.title)}
-                              disabled={!!actionInProgress}
-                              id={`approve-property-${property.id}`}
-                            >
-                              {actionInProgress === `approve-property-${property.id}` ? "..." : "Approve"}
-                            </button>
-                            <button
-                              className="btn-reject"
-                              onClick={() => handleRejectProperty(property.id, property.title)}
-                              disabled={!!actionInProgress}
-                              id={`reject-property-${property.id}`}
-                            >
-                              {actionInProgress === `reject-property-${property.id}` ? "..." : "Reject"}
-                            </button>
-                          </div>
-                        </td>
+                             <div className="table-property-icon">🏢</div>
+                             <div>
+                               <div className="table-property-title">{property.title}</div>
+                               <div className="table-property-id">ID: #PR-{property.id}</div>
+                             </div>
+                           </div>
+                         </td>
+                         <td>{property.location || "—"}</td>
+                         <td><span className="table-price">{formatPrice(property.price)}</span></td>
+                         <td>{property.landlord?.fullName || "—"}</td>
+                         <td>
+                           <div className="admin-actions">
+                             <button className="btn-approve" onClick={() => handleApproveProperty(property.id, property.title)} disabled={!!actionInProgress}>Approve</button>
+                             <button className="btn-reject" onClick={() => handleRejectProperty(property.id, property.title)} disabled={!!actionInProgress}>Reject</button>
+                           </div>
+                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )
-          )}
-        </div>
-
-        {/* ─── Warning Alert (always visible) ── */}
-        <div className="admin-warning" id="admin-warning-latency">
-          <span className="admin-warning-icon">⚠️</span>
-          <div>
-            <div className="admin-warning-title">System Latency Detected</div>
-            <div className="admin-warning-text">
-              Background verification API is taking longer than usual to respond.
-              Verification may be delayed.
-            </div>
-          </div>
+          ) : activeTab === "all-users" ? (
+            <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Approved</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allUsers.map((u) => (
+                      <tr key={u.id}>
+                         <td>
+                           <div>
+                             <div className="table-name">{u.fullName}</div>
+                             <div className="table-id">ID: #{u.id}</div>
+                           </div>
+                         </td>
+                         <td>{u.email}</td>
+                         <td>{u.role}</td>
+                         <td><span className={u.isActive ? "status-badge active" : "status-badge inactive"}>{u.isActive ? "Active" : "Inactive"}</span></td>
+                         <td>{u.isApproved ? "Yes" : "No"}</td>
+                         <td>
+                           <div className="admin-actions">
+                             <button 
+                                className={u.isActive ? "btn-reject" : "btn-approve"} 
+                                onClick={() => handleToggleUserStatus(u.id, u.fullName)} 
+                                disabled={!!actionInProgress}
+                              >
+                               {u.isActive ? "Deactivate" : "Activate"}
+                             </button>
+                           </div>
+                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+          ) : activeTab === "all-properties" ? (
+             <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Property</th>
+                      <th>Status</th>
+                      <th>Price</th>
+                      <th>Landlord</th>
+                      <th>Visibility</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allProperties.map((p) => (
+                      <tr key={p.id}>
+                         <td>
+                           <div>
+                             <div className="table-property-title">{p.title}</div>
+                             <div className="table-property-id">ID: #PR-{p.id}</div>
+                           </div>
+                         </td>
+                         <td>{p.rentalStatus}</td>
+                         <td>{formatPrice(p.price)}</td>
+                         <td>{p.landlord?.fullName || "—"}</td>
+                          <td>
+                            <span style={{ fontSize: "12px", padding: "4px 8px", borderRadius: "12px", background: p.isActive ? "#dcfce7" : "#fee2e2", color: p.isActive ? "#166534" : "#991b1b" }}>
+                              {p.isActive ? "Visible" : "Hidden"}
+                            </span>
+                            <span style={{ marginLeft: "8px", fontSize: "12px", padding: "4px 8px", borderRadius: "12px",
+                              background: p.isApproved ? "#dcfce7" : (!p.isActive ? "#fee2e2" : "#fef3c7"),
+                              color: p.isApproved ? "#166534" : (!p.isActive ? "#991b1b" : "#92400e")
+                            }}>
+                              {p.isApproved ? "Approved" : (!p.isActive ? "Rejected" : "Pending")}
+                            </span>
+                          </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+          ) : null}
         </div>
       </main>
     </div>

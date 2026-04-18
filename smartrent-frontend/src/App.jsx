@@ -145,7 +145,7 @@ function App() {
             <Route
               path="/favorites"
               element={
-                <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
+                <ProtectedRoute allowedRoles={[ROLES.TENANT, ROLES.LANDLORD, ROLES.ADMIN]}>
                   <><Favorites /><Footer /></>
                 </ProtectedRoute>
               }

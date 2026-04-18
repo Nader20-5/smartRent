@@ -16,7 +16,7 @@ import {
   FaTrashAlt,
 } from "react-icons/fa";
 import { MdElevator } from "react-icons/md";
-import properties from "../../data/dummyProperties.json";
+import { getPropertyById } from "../../services/propertyService";
 
 const PROPERTY_TYPES = [
   { value: "Apartment", label: "Apartment", icon: FaBuilding },
@@ -37,27 +37,30 @@ const EditProperty = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  const property = useMemo(
-    () => properties.find((p) => p.id === Number(id)),
-    [id]
-  );
-
-  const [formData, setFormData] = useState(() => {
-    if (!property) return null;
-    return {
-      title: property.title,
-      description: property.description,
-      propertyType: property.propertyType,
-      price: String(property.price),
-      location: property.location,
-      amenities: { ...property.amenities },
+  const [property, setProperty] = useState(null);
+  const [formData, setFormData] = useState(null);
+  const [existingImages, setExistingImages] = useState([]);
+  
+  React.useEffect(() => {
+    const fetchProp = async () => {
+      try {
+        const data = await getPropertyById(id);
+        setProperty(data);
+        setFormData({
+          title: data.title || "",
+          description: data.description || "",
+          propertyType: data.propertyType || "Apartment",
+          price: String(data.price || 0),
+          location: data.location || "",
+          amenities: data.amenities || { hasParking: false, hasElevator: false, isFurnished: false, hasPool: false },
+        });
+        setExistingImages(data.images || []);
+      } catch (err) {
+        console.error(err);
+      }
     };
-  });
-
-  // Existing images from the property
-  const [existingImages, setExistingImages] = useState(
-    () => property?.images || []
-  );
+    fetchProp();
+  }, [id]);
 
   // Newly uploaded images
   const [newImageFiles, setNewImageFiles] = useState([]);

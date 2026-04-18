@@ -14,8 +14,10 @@ import {
   FaImage,
   FaTimes,
   FaTrashAlt,
+  FaCheckCircle,
 } from "react-icons/fa";
 import { MdElevator } from "react-icons/md";
+import { createProperty } from "../services/propertyService";
 
 const PROPERTY_TYPES = [
   { value: "Apartment", label: "Apartment", icon: FaBuilding },
@@ -31,10 +33,14 @@ const AMENITY_TOGGLES = [
   { key: "hasPool", label: "Pool", icon: FaSwimmingPool },
 ];
 
-const PropertyFormModal = ({ isOpen, onClose, property = null }) => {
+const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
   const fileInputRef = useRef(null);
   const modalRef = useRef(null);
   const isEditMode = !!property;
+
+  const [submitting, setSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -192,19 +198,46 @@ const PropertyFormModal = ({ isOpen, onClose, property = null }) => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const payload = {
-      ...(isEditMode ? { id: property.id } : {}),
-      ...formData,
-      price: Number(formData.price),
-      existingImageIds: existingImages.map((img) => img.id),
-      newImages: newImageFiles.map((img) => img.file),
-    };
-    console.log(isEditMode ? "Updating:" : "Creating:", payload);
-    onClose();
+    setSubmitting(true);
+    setSubmitError("");
+    setSuccessMsg("");
+
+    try {
+      // Build FormData for multipart/form-data
+      const fd = new FormData();
+      fd.append("Title", formData.title);
+      fd.append("Description", formData.description);
+      fd.append("PropertyType", formData.propertyType);
+      fd.append("Price", Number(formData.price));
+      fd.append("Location", formData.location);
+      fd.append("HasParking", formData.amenities.hasParking);
+      fd.append("HasElevator", formData.amenities.hasElevator);
+      fd.append("IsFurnished", formData.amenities.isFurnished);
+      fd.append("HasPool", formData.amenities.hasPool);
+
+      newImageFiles.forEach((img) => {
+        fd.append("Images", img.file);
+      });
+
+      await createProperty(fd);
+      setSuccessMsg("Property submitted successfully! Please wait for admin approval.");
+
+      // Notify parent to refresh + close after delay
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+        onClose();
+        setSuccessMsg("");
+      }, 2500);
+    } catch (err) {
+      console.error("Failed to create property:", err);
+      setSubmitError(err.response?.data?.message || "Failed to create property. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -437,24 +470,47 @@ const PropertyFormModal = ({ isOpen, onClose, property = null }) => {
             )}
           </div>
 
+          {/* ── Feedback Messages ── */}
+          {successMsg && (
+            <div style={{
+              padding: "14px 20px", borderRadius: "12px", margin: "0 24px 8px",
+              display: "flex", alignItems: "center", gap: "10px",
+              background: "rgba(16,185,129,0.15)", color: "#10b981",
+              border: "1px solid rgba(16,185,129,0.3)", fontSize: "14px", fontWeight: 600,
+            }}>
+              <FaCheckCircle style={{ fontSize: "18px", flexShrink: 0 }} />
+              {successMsg}
+            </div>
+          )}
+          {submitError && (
+            <div style={{
+              padding: "14px 20px", borderRadius: "12px", margin: "0 24px 8px",
+              display: "flex", alignItems: "center", gap: "10px",
+              background: "rgba(239,68,68,0.15)", color: "#ef4444",
+              border: "1px solid rgba(239,68,68,0.3)", fontSize: "14px", fontWeight: 600,
+            }}>
+              <FaTimesCircle style={{ fontSize: "18px", flexShrink: 0 }} />
+              {submitError}
+            </div>
+          )}
+
           {/* ── Modal Footer ── */}
           <div className="modal-footer">
             <button
               type="button"
               className="btn btn-secondary"
               onClick={onClose}
+              disabled={submitting}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary btn-lg">
-              {isEditMode ? (
-                <>
-                  <FaSave /> Save Changes
-                </>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={submitting}>
+              {submitting ? (
+                <>Submitting…</>
+              ) : isEditMode ? (
+                <><FaSave /> Save Changes</>
               ) : (
-                <>
-                  <FaPaperPlane /> Submit for Approval
-                </>
+                <><FaPaperPlane /> Submit for Approval</>
               )}
             </button>
           </div>

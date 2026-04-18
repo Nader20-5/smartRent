@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartRent.API.Data;
 using SmartRent.API.DTOs.Common;
 using SmartRent.API.DTOs.Property;
+using SmartRent.API.DTOs.Review;
 using SmartRent.API.Helpers;
 using SmartRent.API.Models;
 using SmartRent.API.Services.Interfaces;
@@ -240,7 +241,7 @@ namespace SmartRent.API.Services.Implementations
             try
             {
                 var propertyIds = await _context.Properties
-                    .Where(p => p.LandlordId == landlordId)
+                    .Where(p => p.LandlordId == landlordId && p.IsActive)
                     .OrderByDescending(p => p.CreatedAt)
                     .Select(p => p.Id)
                     .ToListAsync();
@@ -312,6 +313,7 @@ namespace SmartRent.API.Services.Implementations
                 .Include(p => p.Images)
                 .Include(p => p.Amenity)
                 .Include(p => p.Reviews)
+                    .ThenInclude(r => r.Tenant)
                 .FirstOrDefaultAsync(p => p.Id == propertyId);
 
             if (property == null) return null;
@@ -332,7 +334,7 @@ namespace SmartRent.API.Services.Implementations
             {
                 Id           = property.Id,
                 Title        = property.Title,
-                Description  = property.Description,
+                Description  = property.Description ?? string.Empty,
                 Price        = property.Price,
                 Location     = property.Location,
                 PropertyType = property.PropertyType,
@@ -358,14 +360,27 @@ namespace SmartRent.API.Services.Implementations
                 {
                     Id           = property.Landlord.Id,
                     FullName     = property.Landlord.FullName,
-                    PhoneNumber  = property.Landlord.PhoneNumber,
-                    ProfileImage = property.Landlord.ProfileImage
+                    PhoneNumber  = property.Landlord.PhoneNumber ?? string.Empty,
+                    ProfileImage = property.Landlord.ProfileImage ?? string.Empty
                 },
                 Rating = new PropertyRatingDto
                 {
                     AverageScore = (decimal)avgScore,
                     TotalReviews = totalReviews
-                }
+                },
+                Reviews = property.Reviews
+                    .OrderByDescending(r => r.CreatedAt)
+                    .Select(r => new ReviewResponseDto
+                    {
+                        Id = r.Id,
+                        PropertyId = r.PropertyId,
+                        TenantId = r.TenantId,
+                        TenantFullName = r.Tenant?.FullName ?? "Anonymous",
+                        TenantProfileImage = r.Tenant?.ProfileImage,
+                        Rating = r.Rating,
+                        Comment = r.Comment,
+                        CreatedAt = r.CreatedAt
+                    }).ToList()
             };
         }
     }

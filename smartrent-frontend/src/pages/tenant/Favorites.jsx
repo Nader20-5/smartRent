@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   FaHeart,
@@ -6,31 +6,60 @@ import {
   FaTrashAlt,
   FaHome,
 } from "react-icons/fa";
-import { MdSearchOff } from "react-icons/md";
 import PropertyCard from "../../components/PropertyCard";
-import properties from "../../data/dummyProperties.json";
+import { getFavorites, removeFavorite } from "../../services/favoriteService";
 
 const Favorites = () => {
-  // Track removed favorites locally
-  const [removedIds, setRemovedIds] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const favoriteProperties = useMemo(() => {
-    return properties
-      .filter((p) => p.isFavorite)
-      .filter((p) => !removedIds.includes(p.id));
-  }, [removedIds]);
-
-  const handleFavoriteToggle = (id, newState) => {
-    if (!newState) {
-      setRemovedIds((prev) => [...prev, id]);
-    } else {
-      setRemovedIds((prev) => prev.filter((rid) => rid !== id));
+  const fetchFavorites = async () => {
+    try {
+      const data = await getFavorites();
+      setProperties(data || []);
+    } catch (err) {
+      console.error("Failed to load favorites:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const clearAllFavorites = () => {
-    setRemovedIds(favoriteProperties.map((p) => p.id));
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const handleFavoriteToggle = async (id, newState) => {
+    if (!newState) {
+      try {
+        await removeFavorite(id);
+        setProperties((prev) => prev.filter((p) => p.id !== id));
+      } catch (err) {
+        console.error("Failed to remove favorite:", err);
+      }
+    }
   };
+
+  const clearAllFavorites = async () => {
+    try {
+      await Promise.all(properties.map((p) => removeFavorite(p.id)));
+      setProperties([]);
+    } catch (err) {
+      console.error("Failed to clear favorites:", err);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="page-wrapper">
+        <div className="container">
+          <div className="loading-state" style={{ padding: "8rem 0", textAlign: "center" }}>
+            <div className="spinner" style={{ width: 40, height: 40, margin: "0 auto 1rem" }} />
+            <p style={{ color: "var(--color-text-muted)" }}>Loading your favorites...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper">
@@ -46,7 +75,7 @@ const Favorites = () => {
                 Properties you've saved for later
               </p>
             </div>
-            {favoriteProperties.length > 0 && (
+            {properties.length > 0 && (
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={clearAllFavorites}
@@ -58,10 +87,10 @@ const Favorites = () => {
           </div>
           <div className="favorites-count">
             <span className="favorites-count-number">
-              {favoriteProperties.length}
+              {properties.length}
             </span>
             <span className="favorites-count-label">
-              {favoriteProperties.length === 1
+              {properties.length === 1
                 ? "saved property"
                 : "saved properties"}
             </span>
@@ -69,9 +98,9 @@ const Favorites = () => {
         </div>
 
         {/* ── Grid or Empty State ── */}
-        {favoriteProperties.length > 0 ? (
+        {properties.length > 0 ? (
           <div className="property-grid" id="favorites-grid">
-            {favoriteProperties.map((property) => (
+            {properties.map((property) => (
               <PropertyCard
                 key={property.id}
                 property={{ ...property, isFavorite: true }}

@@ -7,7 +7,7 @@ namespace SmartRent.API.Controllers
 {
     [ApiController]
     [Route("api/favorites")]
-    [Authorize(Roles = "Tenant")]
+    [Authorize]
     public class FavoriteController : ControllerBase
     {
         private readonly IFavoriteService _favoriteService;

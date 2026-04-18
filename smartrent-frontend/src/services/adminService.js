@@ -29,3 +29,23 @@ export const rejectProperty = async (id) => {
   const response = await api.put(`/admin/reject-property/${id}`);
   return response.data;
 };
+
+export const getDashboardStats = async () => {
+  const response = await api.get("/admin/dashboard-stats");
+  return response.data;
+};
+
+export const getAllUsers = async (pageNumber = 1, pageSize = 50) => {
+  const response = await api.get(`/admin/users?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+  return response.data;
+};
+
+export const toggleUserStatus = async (id) => {
+  const response = await api.put(`/admin/users/${id}/toggle-status`);
+  return response.data;
+};
+
+export const getAllProperties = async (pageNumber = 1, pageSize = 50) => {
+  const response = await api.get(`/admin/properties?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+  return response.data;
+};
