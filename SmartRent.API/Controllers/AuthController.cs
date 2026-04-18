@@ -18,15 +18,25 @@ namespace SmartRent.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            // TODO: implement
-            return Ok();
+            var result = await _authService.RegisterAsync(dto);
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(result.Data);
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            // TODO: implement
-            return Ok();
+            var result = await _authService.LoginAsync(dto);
+            if (!result.Success)
+            {
+                return Unauthorized(new { message = result.Message });
+            }
+
+            return Ok(result.Data);
         }
     }
 }

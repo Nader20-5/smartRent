@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("Reviews")]
     public class Review
     {
         [Key]
@@ -24,11 +25,8 @@ namespace SmartRent.API.Models
         [Range(1, 5)]
         public int Rating { get; set; }
 
-        [MaxLength(1000)]
         public string? Comment { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public DateTime? UpdatedAt { get; set; }
     }
 }
