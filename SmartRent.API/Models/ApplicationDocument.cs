@@ -12,7 +12,7 @@ namespace SmartRent.API.Models
         public int RentalApplicationId { get; set; }
 
         [ForeignKey("RentalApplicationId")]
-        public RentalApplication RentalApplication { get; set; } = null!;
+        public virtual RentalApplication RentalApplication { get; set; } = null!;
 
         [Required]
         [MaxLength(200)]
@@ -23,8 +23,7 @@ namespace SmartRent.API.Models
         public string DocumentUrl { get; set; } = string.Empty;
 
         [MaxLength(50)]
-        public string? DocumentType { get; set; } // ID, ProofOfIncome, Reference, etc.
-
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public string? DocumentType { get; set; } 
+        public DateTime UploadedAt { get; set; } = DateTime.Now;
     }
 }

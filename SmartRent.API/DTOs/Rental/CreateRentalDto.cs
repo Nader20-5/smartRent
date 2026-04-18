@@ -11,7 +11,7 @@ namespace SmartRent.API.DTOs.Rental
         [MaxLength(1000, ErrorMessage = "Cover letter cannot exceed 1000 characters.")]
         public string? CoverLetter { get; set; }
 
-        [Range(0, double.MaxValue, ErrorMessage = "Proposed rent must be a positive value.")]
+        [Range(0, 1000000, ErrorMessage = "Proposed rent must be a realistic positive value.")]
         public decimal? ProposedRent { get; set; }
 
         [DataType(DataType.Date)]

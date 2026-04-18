@@ -143,6 +143,7 @@ D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\SmartRent.API.pdb
 D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\SmartRent.API.genruntimeconfig.cache
 D:\Projects\SmartRent\SmartRent.API\obj\Debug\net8.0\ref\SmartRent.API.dll
 C:\Users\Ganna\source\repos\smartRent\SmartRent.API\bin\Debug\net8.0\appsettings.json
+C:\Users\Ganna\source\repos\smartRent\SmartRent.API\bin\Debug\net8.0\SmartRent.API.staticwebassets.runtime.json
 C:\Users\Ganna\source\repos\smartRent\SmartRent.API\bin\Debug\net8.0\SmartRent.API.staticwebassets.endpoints.json
 C:\Users\Ganna\source\repos\smartRent\SmartRent.API\bin\Debug\net8.0\SmartRent.API.exe
 C:\Users\Ganna\source\repos\smartRent\SmartRent.API\bin\Debug\net8.0\SmartRent.API.deps.json

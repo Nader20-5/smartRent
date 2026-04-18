@@ -24,14 +24,12 @@ namespace SmartRent.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // User constraints
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(u => u.Email).IsUnique();
                 entity.Property(u => u.Role).HasMaxLength(20);
             });
 
-            // Property constraints
             modelBuilder.Entity<Property>(entity =>
             {
                 entity.HasOne(p => p.Landlord)
@@ -43,7 +41,6 @@ namespace SmartRent.API.Data
                 entity.Property(p => p.SecurityDeposit).HasColumnType("decimal(18,2)");
             });
 
-            // PropertyImage constraints
             modelBuilder.Entity<PropertyImage>(entity =>
             {
                 entity.HasOne(pi => pi.Property)
@@ -52,7 +49,6 @@ namespace SmartRent.API.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // PropertyAmenity constraints
             modelBuilder.Entity<PropertyAmenity>(entity =>
             {
                 entity.HasOne(pa => pa.Property)
@@ -61,7 +57,6 @@ namespace SmartRent.API.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // VisitRequest constraints
             modelBuilder.Entity<VisitRequest>(entity =>
             {
                 entity.HasOne(v => v.Property)
@@ -75,7 +70,6 @@ namespace SmartRent.API.Data
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // RentalApplication constraints
             modelBuilder.Entity<RentalApplication>(entity =>
             {
                 entity.HasOne(r => r.Property)
@@ -91,7 +85,6 @@ namespace SmartRent.API.Data
                 entity.Property(r => r.ProposedRent).HasColumnType("decimal(18,2)");
             });
 
-            // ApplicationDocument constraints
             modelBuilder.Entity<ApplicationDocument>(entity =>
             {
                 entity.HasOne(d => d.RentalApplication)
@@ -100,7 +93,6 @@ namespace SmartRent.API.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Favorite constraints — unique composite key
             modelBuilder.Entity<Favorite>(entity =>
             {
                 entity.HasIndex(f => new { f.UserId, f.PropertyId }).IsUnique();
@@ -116,7 +108,6 @@ namespace SmartRent.API.Data
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Review constraints
             modelBuilder.Entity<Review>(entity =>
             {
                 entity.HasOne(r => r.Property)
@@ -132,7 +123,6 @@ namespace SmartRent.API.Data
                 entity.HasIndex(r => new { r.PropertyId, r.TenantId }).IsUnique();
             });
 
-            // Notification constraints
             modelBuilder.Entity<Notification>(entity =>
             {
                 entity.HasOne(n => n.User)
@@ -142,9 +132,5 @@ namespace SmartRent.API.Data
             });
         }
 
-        internal async Task SaveChangesAsync()
-        {
-            throw new NotImplementedException();
-        }
     }
 }
