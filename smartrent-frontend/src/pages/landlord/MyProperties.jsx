@@ -10,7 +10,7 @@ import { MdSearchOff } from "react-icons/md";
 import Sidebar from "../../components/Sidebar";
 import PropertyCard from "../../components/PropertyCard";
 import PropertyFormModal from "../../components/PropertyFormModal";
-import properties from "../../data/dummyProperties.json";
+import { getMyProperties, deleteProperty } from "../../services/propertyService";
 
 const STATUS_OPTIONS = [
   "All Statuses",
@@ -30,6 +30,20 @@ const MyProperties = () => {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
+  const [properties, setProperties] = useState([]);
+
+  const fetchProperties = async () => {
+    try {
+      const data = await getMyProperties();
+      setProperties(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchProperties();
+  }, []);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
@@ -44,7 +58,7 @@ const MyProperties = () => {
       if (typeFilter !== "All Types" && p.propertyType !== typeFilter) return false;
       return true;
     });
-  }, [searchQuery, statusFilter, typeFilter]);
+  }, [searchQuery, statusFilter, typeFilter, properties]);
 
   const clearAllFilters = () => {
     setSearchQuery("");
@@ -71,8 +85,19 @@ const MyProperties = () => {
     }
   };
 
-  const handleDeleteProperty = (id) => {
-    console.log("Delete property:", id);
+  const handleDeleteProperty = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this property? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await deleteProperty(id);
+      fetchProperties(); // Refresh list after deletion
+    } catch (err) {
+      console.error("Failed to delete property:", err);
+      const msg = err.response?.data?.message || "Failed to delete property. Please try again.";
+      alert(msg);
+    }
   };
 
   const handleCloseModal = () => {
@@ -221,6 +246,7 @@ const MyProperties = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         property={editingProperty}
+        onSuccess={fetchProperties}
       />
     </div>
   );

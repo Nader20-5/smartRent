@@ -1,3 +1,5 @@
+using SmartRent.API.DTOs.Review;
+
 namespace SmartRent.API.DTOs.Property
 {
     /// <summary>
@@ -18,6 +20,7 @@ namespace SmartRent.API.DTOs.Property
         public List<PropertyImageDto> Images { get; set; } = new();
         public PropertyLandlordDto Landlord { get; set; } = new();
         public PropertyRatingDto Rating { get; set; } = new();
+        public List<ReviewResponseDto> Reviews { get; set; } = new();
 
         public bool IsFavorite { get; set; }
         public bool IsApproved { get; set; }

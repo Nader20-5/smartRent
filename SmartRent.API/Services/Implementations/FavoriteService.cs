@@ -152,7 +152,7 @@ namespace SmartRent.API.Services.Implementations
             {
                 Id           = property.Id,
                 Title        = property.Title,
-                Description  = property.Description,
+                Description  = property.Description ?? string.Empty,
                 Price        = property.Price,
                 Location     = property.Location,
                 PropertyType = property.PropertyType,
@@ -178,8 +178,8 @@ namespace SmartRent.API.Services.Implementations
                 {
                     Id           = property.Landlord.Id,
                     FullName     = property.Landlord.FullName,
-                    PhoneNumber  = property.Landlord.PhoneNumber,
-                    ProfileImage = property.Landlord.ProfileImage
+                    PhoneNumber  = property.Landlord.PhoneNumber ?? string.Empty,
+                    ProfileImage = property.Landlord.ProfileImage ?? string.Empty
                 },
                 Rating = new PropertyRatingDto
                 {

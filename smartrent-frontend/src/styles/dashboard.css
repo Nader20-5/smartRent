@@ -1,4 +1,4 @@
-﻿/* ===================================================================
+/* ===================================================================
    DASHBOARD LAYOUT (Sidebar + Content)
    ═══════════════════════════════════════════════════════════════════ */
 .dashboard-layout {
@@ -131,7 +131,7 @@
 /* ─── Stats Row ─── */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-6);
   margin-bottom: var(--space-8);
 }
@@ -180,6 +180,11 @@
 .stat-card-occupancy .stat-card-icon-wrapper {
   background: rgba(59, 130, 246, 0.12);
   color: var(--color-info);
+}
+
+.stat-card-rejected .stat-card-icon-wrapper {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-error);
 }
 
 .stat-card-icon {

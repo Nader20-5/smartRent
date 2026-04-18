@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FaBuilding,
   FaHome,
@@ -11,7 +12,9 @@ import {
   FaTimesCircle,
   FaPaperPlane,
   FaImage,
+  FaCheckCircle,
 } from "react-icons/fa";
+import { createProperty } from "../../services/propertyService";
 import { MdElevator } from "react-icons/md";
 
 const PROPERTY_TYPES = [
@@ -30,7 +33,10 @@ const AMENITY_TOGGLES = [
 
 const AddProperty = () => {
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMsg, setSubmitMsg] = useState(null); // { type: 'success' | 'error', text: '...' }
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -115,15 +121,40 @@ const AddProperty = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = {
-      ...formData,
-      price: Number(formData.price),
-      images: imageFiles.map((img) => img.file),
-    };
-    console.log("Submitting property:", payload);
-    // Future: POST to API via Axios
+    setSubmitting(true);
+    setSubmitMsg(null);
+
+    try {
+      // Build FormData — backend expects multipart/form-data
+      const fd = new FormData();
+      fd.append("Title", formData.title);
+      fd.append("Description", formData.description);
+      fd.append("PropertyType", formData.propertyType);
+      fd.append("Price", Number(formData.price));
+      fd.append("Location", formData.location);
+      fd.append("HasParking", formData.amenities.hasParking);
+      fd.append("HasElevator", formData.amenities.hasElevator);
+      fd.append("IsFurnished", formData.amenities.isFurnished);
+      fd.append("HasPool", formData.amenities.hasPool);
+
+      imageFiles.forEach((img) => {
+        fd.append("Images", img.file);
+      });
+
+      await createProperty(fd);
+      setSubmitMsg({ type: "success", text: "Property submitted! Pending admin approval." });
+
+      // Navigate to landlord dashboard after short delay
+      setTimeout(() => navigate("/landlord/dashboard"), 1500);
+    } catch (err) {
+      console.error("Failed to create property:", err);
+      const msg = err.response?.data?.message || "Failed to create property. Please try again.";
+      setSubmitMsg({ type: "error", text: msg });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -332,14 +363,39 @@ const AddProperty = () => {
               </div>
             </section>
 
+            {/* ══════ Feedback ══════ */}
+            {submitMsg && (
+              <div className={`add-property-alert ${submitMsg.type}`} style={{
+                padding: "12px 20px",
+                borderRadius: "12px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "14px",
+                fontWeight: 500,
+                background: submitMsg.type === "success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+                color: submitMsg.type === "success" ? "#059669" : "#dc2626",
+                border: `1px solid ${submitMsg.type === "success" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+              }}>
+                {submitMsg.type === "success" ? <FaCheckCircle /> : <FaTimesCircle />}
+                {submitMsg.text}
+              </div>
+            )}
+
             {/* ══════ Submit ══════ */}
             <div className="add-property-submit">
               <button
                 type="submit"
                 className="btn btn-primary btn-lg add-property-submit-btn"
                 id="submit-property-btn"
+                disabled={submitting}
               >
-                <FaPaperPlane /> Submit for Approval
+                {submitting ? (
+                  <>Submitting…</>
+                ) : (
+                  <><FaPaperPlane /> Submit for Approval</>
+                )}
               </button>
             </div>
           </form>

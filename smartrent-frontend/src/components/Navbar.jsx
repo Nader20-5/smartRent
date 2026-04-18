@@ -87,6 +87,16 @@ const Navbar = () => {
               <FaChartLine className="navbar-link-icon" /> Dashboard
             </NavLink>
           )}
+          {isAuthenticated && user?.role === ROLES.ADMIN && (
+            <NavLink
+              to="/admin/dashboard"
+              className={({ isActive }) =>
+                `navbar-link ${isActive ? "is-active" : ""}`
+              }
+            >
+              <FaChartLine className="navbar-link-icon" /> Admin Panel
+            </NavLink>
+          )}
         </nav>
 
         {/* Right actions */}
@@ -171,6 +181,16 @@ const Navbar = () => {
               }
             >
               <FaChartLine /> Dashboard
+            </NavLink>
+          )}
+          {isAuthenticated && user?.role === ROLES.ADMIN && (
+            <NavLink
+              to="/admin/dashboard"
+              className={({ isActive }) =>
+                `navbar-mobile-link ${isActive ? "is-active" : ""}`
+              }
+            >
+              <FaChartLine /> Admin Panel
             </NavLink>
           )}
 

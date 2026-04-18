@@ -9,6 +9,7 @@ import {
 import { MdSearchOff } from "react-icons/md";
 import PropertyCard from "../../components/PropertyCard";
 import { getAllProperties } from "../../services/propertyService";
+import { toggleFavorite } from "../../services/favoriteService";
 
 const PROPERTY_TYPES = ["All Types", "Apartment", "House", "Villa", "Studio"];
 
@@ -45,6 +46,8 @@ const Home = () => {
     };
     fetchProperties();
   }, []);
+
+
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -106,6 +109,28 @@ const Home = () => {
       return true;
     });
   }, [properties, appliedSearch, appliedSearchType, filterType, minPrice, maxPrice]);
+
+  // Intersection Observer for scroll animations
+  useEffect(() => {
+    if (isLoading || filteredProperties.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-in');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    const cards = document.querySelectorAll('.property-card:not(.animate-in)');
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
+  }, [isLoading, filteredProperties]);
 
   return (
     <div className="home-page">
@@ -195,7 +220,16 @@ const Home = () => {
         ) : filteredProperties.length > 0 ? (
           <div className="property-grid" id="property-grid">
             {filteredProperties.map((property) => (
-              <PropertyCard key={property.id} property={property} variant="tenant" />
+              <PropertyCard
+                key={property.id}
+                property={property}
+                variant="tenant"
+                onFavoriteToggle={(id, newState) => {
+                  toggleFavorite(id, newState).catch((err) =>
+                    console.error("Failed to toggle favorite:", err)
+                  );
+                }}
+              />
             ))}
           </div>
         ) : (

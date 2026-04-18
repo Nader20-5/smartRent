@@ -8,10 +8,11 @@ import {
   FaFileSignature,
   FaUserCheck,
   FaEye,
+  FaTimesCircle,
 } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import PropertyCard from "../../components/PropertyCard";
-import properties from "../../data/dummyProperties.json";
+import { getMyProperties, deleteProperty } from "../../services/propertyService";
 
 const DUMMY_ACTIVITY = [
   {
@@ -63,25 +64,45 @@ const DUMMY_ACTIVITY = [
 
 const LandlordDashboard = () => {
   const [activeTab, setActiveTab] = useState("activity");
+  const [properties, setProperties] = useState([]);
+
+  React.useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const data = await getMyProperties();
+        setProperties(data?.data || data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProperties();
+  }, []);
 
   // ── Derive stats from properties data ──
   const stats = useMemo(() => {
     const total = properties.length;
-    const approved = properties.filter(
-      (p) => p.rentalStatus === "Available" || p.rentalStatus === "Approved"
-    ).length;
-    const pending = properties.filter(
-      (p) => p.rentalStatus === "Pending Approval"
-    ).length;
+    const approved = properties.filter((p) => p.isApproved).length;
+    const pending = properties.filter((p) => !p.isApproved && p.isActive).length;
+    const rejected = properties.filter((p) => !p.isApproved && !p.isActive).length;
     const occupancyRate =
       total > 0 ? Math.round((approved / total) * 100) : 0;
 
-    return { total, approved, pending, occupancyRate };
-  }, []);
+    return { total, approved, pending, rejected, occupancyRate };
+  }, [properties]);
 
-  const handleDeleteProperty = (id) => {
-    console.log("Delete property:", id);
-    // Future: DELETE to API
+  const handleDeleteProperty = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this property? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await deleteProperty(id);
+      fetchProperties(); // Refresh list and stats
+    } catch (err) {
+      console.error("Failed to delete property:", err);
+      const msg = err.response?.data?.message || "Failed to delete property. Please try again.";
+      alert(msg);
+    }
   };
 
   return (
@@ -126,6 +147,16 @@ const LandlordDashboard = () => {
             <div className="stat-card-body">
               <span className="stat-card-value">{stats.pending}</span>
               <span className="stat-card-label">Pending</span>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-rejected">
+            <div className="stat-card-icon-wrapper">
+              <FaTimesCircle className="stat-card-icon" />
+            </div>
+            <div className="stat-card-body">
+              <span className="stat-card-value">{stats.rejected}</span>
+              <span className="stat-card-label">Rejected</span>
             </div>
           </div>
 

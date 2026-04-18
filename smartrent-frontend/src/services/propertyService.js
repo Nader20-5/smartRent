@@ -11,7 +11,9 @@ export const getPropertyById = async (id) => {
 };
 
 export const createProperty = async (data) => {
-  const response = await api.post("/property", data);
+  const response = await api.post("/property", data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 };
 
@@ -26,7 +28,7 @@ export const deleteProperty = async (id) => {
 };
 
 export const getMyProperties = async (params) => {
-  const response = await api.get("/property/landlord", { params });
+  const response = await api.get("/property/my", { params });
   return response.data;
 };
 

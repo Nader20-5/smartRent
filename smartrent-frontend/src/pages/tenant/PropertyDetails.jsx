@@ -35,35 +35,6 @@ const AMENITY_CONFIG = [
   { key: "hasPool", label: "Pool", icon: FaSwimmingPool },
 ];
 
-const DUMMY_REVIEWS = [
-  {
-    id: 1,
-    author: "Sophia Martinez",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face",
-    date: "March 18, 2026",
-    rating: 5,
-    comment:
-      "Absolutely stunning property! The photos don't do it justice. The landlord was incredibly responsive and the move-in process was seamless. Highly recommend to anyone looking for premium living.",
-  },
-  {
-    id: 2,
-    author: "Daniel Okafor",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
-    date: "February 24, 2026",
-    rating: 4,
-    comment:
-      "Great location and beautiful interiors. The amenities are top-notch. Only minor issue was a slight delay in maintenance response, but overall a wonderful experience.",
-  },
-  {
-    id: 3,
-    author: "Lina Chen",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face",
-    date: "January 9, 2026",
-    rating: 5,
-    comment:
-      "I've been living here for three months and it feels like home. The neighborhood is quiet, the views are incredible, and everything is maintained to a very high standard.",
-  },
-];
 
 const STATUS_BADGE_MAP = {
   Available: "badge-success",
@@ -222,22 +193,29 @@ const PropertyDetails = () => {
               </div>
 
               <div className="detail-reviews-list">
-                {DUMMY_REVIEWS.map((review) => (
-                  <article key={review.id} className="detail-review-card">
-                    <div className="detail-review-header">
-                      <img src={review.avatar} alt={review.author} className="detail-review-avatar" loading="lazy" />
-                      <div className="detail-review-meta">
-                        <span className="detail-review-author">{review.author}</span>
-                        <span className="detail-review-date">{review.date}</span>
+                {property.reviews && property.reviews.length > 0 ? (
+                  property.reviews.map((review) => (
+                    <article key={review.id} className="detail-review-card">
+                      <div className="detail-review-header">
+                        <FaUserCircle className="detail-review-avatar-icon" style={{ fontSize: "2.5rem", color: "var(--color-text-muted)" }} />
+                        <div className="detail-review-meta">
+                          <span className="detail-review-author">{review.tenantFullName}</span>
+                          <span className="detail-review-date">{new Date(review.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                        </div>
+                        <div className="detail-review-stars">{renderStars(review.rating)}</div>
                       </div>
-                      <div className="detail-review-stars">{renderStars(review.rating)}</div>
-                    </div>
-                    <div className="detail-review-body">
-                      <FaQuoteLeft className="detail-review-quote-icon" />
-                      <p className="detail-review-comment">{review.comment}</p>
-                    </div>
-                  </article>
-                ))}
+                      <div className="detail-review-body">
+                        <FaQuoteLeft className="detail-review-quote-icon" />
+                        <p className="detail-review-comment">{review.comment}</p>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className="empty-state" style={{ padding: "2rem 0" }}>
+                    <FaRegStar style={{ fontSize: "2rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }} />
+                    <p style={{ color: "var(--color-text-muted)" }}>No reviews yet for this property.</p>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -251,7 +229,6 @@ const PropertyDetails = () => {
               </div>
               <hr className="booking-card-divider" />
               <div className="booking-card-landlord">
-                <img src={property.landlord.profileImage} alt={property.landlord.fullName} className="booking-card-landlord-avatar" loading="lazy" />
                 <div className="booking-card-landlord-info">
                   <span className="booking-card-landlord-name">{property.landlord.fullName}</span>
                   <span className="booking-card-landlord-role"><MdVerified className="booking-card-verified-icon" /> Verified Landlord</span>

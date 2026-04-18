@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register as registerService } from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
 import "./Register.css";
 
 const Register = () => {
@@ -8,15 +9,18 @@ const Register = () => {
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     phoneNumber: "",
-    role: "Tenant",
+    role: "Tenant", // Tenant or Landlord
   });
+  
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useAuth(); // Import useAuth to automatically log them in
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,6 +36,10 @@ const Register = () => {
       setError("Please fill in all fields.");
       return;
     }
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
@@ -39,9 +47,17 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      await registerService(formData);
-      setSuccess("Account created successfully! Redirecting to login...");
-      setTimeout(() => navigate("/login", { replace: true }), 2000);
+      const data = await registerService(formData);
+      
+      // Auto-Login logic based on Role
+      if (formData.role === "Tenant") {
+        setSuccess("Account created successfully! Logging you in...");
+        login(data.token, data.user);
+        setTimeout(() => navigate("/", { replace: true }), 1500);
+      } else {
+        setSuccess("Landlord account created! Pending Admin approval to login.");
+        setTimeout(() => navigate("/login", { replace: true }), 4000);
+      }
     } catch (err) {
       const message =
         err.response?.data?.message || err.response?.data?.title || err.response?.data ||
@@ -52,8 +68,10 @@ const Register = () => {
     }
   };
 
+  const isLandlord = formData.role === "Landlord";
+
   return (
-    <div className="register-page">
+    <div className={`register-page ${isLandlord ? 'theme-landlord' : 'theme-tenant'}`}>
       {/* ═══════ TOP BAR ═══════ */}
       <div className="register-topbar">
         <div className="register-topbar-logo">SmartRent</div>
@@ -67,26 +85,12 @@ const Register = () => {
         <div className="register-card">
           {/* Card Header */}
           <div className="register-card-header">
-            <h1>Create Your Account</h1>
-            <p>Join thousands of users finding their perfect rental.</p>
-          </div>
-
-          {/* Step Indicator */}
-          <div className="register-steps">
-            <div className="register-step completed">
-              <div className="register-step-number">✓</div>
-              <span>Choose Role</span>
-            </div>
-            <div className="register-step-line active"></div>
-            <div className="register-step active">
-              <div className="register-step-number">2</div>
-              <span>Your Details</span>
-            </div>
-            <div className="register-step-line"></div>
-            <div className="register-step">
-              <div className="register-step-number">3</div>
-              <span>Done</span>
-            </div>
+            <h1>{isLandlord ? "Partner With Us" : "Create Your Account"}</h1>
+            <p>
+              {isLandlord 
+                ? "List your properties to thousands of verified tenants." 
+                : "Join thousands of users finding their perfect rental."}
+            </p>
           </div>
 
           {/* Card Body */}
@@ -111,10 +115,36 @@ const Register = () => {
             )}
 
             <form className="register-form" onSubmit={handleSubmit}>
-              {/* Row 1: Full Name + Role */}
+              
+              {/* Central Account Type Selector */}
+              <div className="reg-form-group full-width role-selector">
+                <label className="reg-form-label">I want to...</label>
+                <div className="role-options">
+                  <button 
+                    type="button" 
+                    className={`role-btn ${!isLandlord ? 'active' : ''}`}
+                    onClick={() => setFormData(p => ({...p, role: 'Tenant'}))}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Rent a Property
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`role-btn ${isLandlord ? 'active' : ''}`}
+                    onClick={() => setFormData(p => ({...p, role: 'Landlord'}))}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    List my Property
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 1: Full Name */}
               <div className="register-form-row">
-                <div className="reg-form-group">
-                  <label className="reg-form-label" htmlFor="register-fullname">Full Name</label>
+                <div className="reg-form-group full-width">
+                  <label className="reg-form-label" htmlFor="register-fullname">
+                    {isLandlord ? "Contact Person / Company Name" : "Full Name"}
+                  </label>
                   <div className="reg-input-wrapper">
                     <span className="reg-input-icon">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -123,23 +153,6 @@ const Register = () => {
                     </span>
                     <input id="register-fullname" type="text" name="fullName" className="reg-form-input"
                       placeholder="John Doe" value={formData.fullName} onChange={handleChange} required />
-                  </div>
-                </div>
-
-                <div className="reg-form-group">
-                  <label className="reg-form-label" htmlFor="register-role">I want to</label>
-                  <div className="reg-input-wrapper">
-                    <span className="reg-input-icon">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/>
-                        <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
-                      </svg>
-                    </span>
-                    <select id="register-role" name="role" className="reg-form-select"
-                      value={formData.role} onChange={handleChange} required>
-                      <option value="Tenant">Rent a Property</option>
-                      <option value="Landlord">List my Property</option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -173,32 +186,48 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Row 3: Password (full width) */}
-              <div className="reg-form-group full-width">
-                <label className="reg-form-label" htmlFor="register-password">Password</label>
-                <div className="reg-input-wrapper">
-                  <span className="reg-input-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-                    </svg>
-                  </span>
-                  <input id="register-password" type={showPassword ? "text" : "password"} name="password"
-                    className="reg-form-input has-right-icon" placeholder="Min. 6 characters"
-                    value={formData.password} onChange={handleChange} required />
-                  <button type="button" className="reg-input-icon-right"
-                    onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
-                    {showPassword ? (
+              {/* Row 3: Password + Confirm Password */}
+              <div className="register-form-row">
+                <div className="reg-form-group">
+                  <label className="reg-form-label" htmlFor="register-password">Password</label>
+                  <div className="reg-input-wrapper">
+                    <span className="reg-input-icon">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                       </svg>
-                    ) : (
+                    </span>
+                    <input id="register-password" type={showPassword ? "text" : "password"} name="password"
+                      className="reg-form-input has-right-icon" placeholder="Min. 6 chars"
+                      value={formData.password} onChange={handleChange} required />
+                    <button type="button" className="reg-input-icon-right"
+                      onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                      {showPassword ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="reg-form-group">
+                  <label className="reg-form-label" htmlFor="register-confirm">Confirm</label>
+                  <div className="reg-input-wrapper">
+                    <span className="reg-input-icon">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        <polyline points="20 6 9 17 4 12"/>
                       </svg>
-                    )}
-                  </button>
+                    </span>
+                    <input id="register-confirm" type={showPassword ? "text" : "password"} name="confirmPassword"
+                      className="reg-form-input" placeholder="Repeat password"
+                      value={formData.confirmPassword} onChange={handleChange} required />
+                  </div>
                 </div>
               </div>
 

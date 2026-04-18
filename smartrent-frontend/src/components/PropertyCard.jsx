@@ -74,10 +74,17 @@ const PropertyCard = ({
     onDelete?.(property.id);
   };
 
+  const [isAnimate, setIsAnimate] = useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsAnimate(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <Link
       to={`/property/${property.id}`}
-      className="property-card"
+      className={`property-card ${isAnimate ? "animate-in" : ""}`}
       id={`property-card-${property.id}`}
     >
       {/* ── Image Section ── */}
@@ -153,10 +160,18 @@ const PropertyCard = ({
           <div className="property-card-actions">
             <span
               className={`property-card-status badge ${
-                STATUS_BADGE_MAP[property.rentalStatus] || "badge-info"
+                property.isApproved
+                  ? "badge-success"
+                  : !property.isActive
+                  ? "badge-error"
+                  : "badge-warning"
               }`}
             >
-              {property.rentalStatus}
+              {property.isApproved
+                ? "Approved"
+                : !property.isActive
+                ? "Rejected"
+                : "Pending Approval"}
             </span>
             <div className="property-card-action-buttons">
               <button

@@ -31,7 +31,7 @@ export const register = async (formData) => {
     lastName: nameParts.slice(1).join(" ") || nameParts[0] || "",
     email: formData.email,
     password: formData.password,
-    confirmPassword: formData.password,
+    confirmPassword: formData.confirmPassword || formData.password,
     role: formData.role || "Tenant",
     phone: formData.phoneNumber || null,
   };
