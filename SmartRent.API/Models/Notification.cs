@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("Notifications")]
     public class Notification
     {
         [Key]
@@ -15,21 +16,23 @@ namespace SmartRent.API.Models
         public User User { get; set; } = null!;
 
         [Required]
-        [MaxLength(200)]
+        [MaxLength(100)]
         public string Title { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(1000)]
+        [MaxLength(500)]
         public string Message { get; set; } = string.Empty;
 
+        [Required]
         [MaxLength(50)]
-        public string? Type { get; set; } // Visit, Rental, System, etc.
+        public string Type { get; set; } = string.Empty;
 
         public bool IsRead { get; set; } = false;
 
-        [MaxLength(500)]
-        public string? Link { get; set; }
+        public int? RelatedId { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? Link { get; set; }
+
     }
 }

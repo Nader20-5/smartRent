@@ -1,0 +1,46 @@
+## Core .NET Ignores
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+
+## Visual Studio Ignores
+.vs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+.vs/
+
+## User Secrets & Local Config
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+## Entity Framework & SQL
+*.db
+*.db-shm
+*.db-wal
+*.sqlproj.user
+*.publish.xml
+
+## Local Uploads (if any)
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace

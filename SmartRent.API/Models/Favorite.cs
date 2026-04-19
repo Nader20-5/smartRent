@@ -3,12 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("Favorites")]
     public class Favorite
     {
         [Key]
         public int Id { get; set; }
 
         [Required]
+        [Column("TenantId")]
         public int UserId { get; set; }
 
         [ForeignKey("UserId")]

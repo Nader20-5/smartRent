@@ -8,12 +8,22 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://localhost:5001',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
-      '/notificationHub': {
-        target: 'https://localhost:5001',
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/rentals': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/hubs': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         ws: true,

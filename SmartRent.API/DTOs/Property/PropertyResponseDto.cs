@@ -1,49 +1,58 @@
+using SmartRent.API.DTOs.Review;
+
 namespace SmartRent.API.DTOs.Property
 {
+    /// <summary>
+    /// Full property response matching the exact frontend JSON contract.
+    /// </summary>
     public class PropertyResponseDto
     {
         public int Id { get; set; }
-
         public string Title { get; set; } = string.Empty;
-
-        public string? Description { get; set; }
-
+        public string Description { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string Location { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
-
-        public string Address { get; set; } = string.Empty;
-
-        public string City { get; set; } = string.Empty;
-
-        public string State { get; set; } = string.Empty;
-
-        public string ZipCode { get; set; } = string.Empty;
-
-        public decimal MonthlyRent { get; set; }
-
-        public decimal? SecurityDeposit { get; set; }
-
-        public int Bedrooms { get; set; }
-
-        public int Bathrooms { get; set; }
-
-        public double? AreaSqFt { get; set; }
-
-        public bool IsAvailable { get; set; }
-
-        public string Status { get; set; } = string.Empty;
-
-        public int LandlordId { get; set; }
-
-        public string LandlordName { get; set; } = string.Empty;
-
-        public List<string> Images { get; set; } = new();
-
-        public List<string> Amenities { get; set; } = new();
-
-        public double AverageRating { get; set; }
-
-        public int ReviewCount { get; set; }
-
+        public string RentalStatus { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+
+        public PropertyAmenitiesDto Amenities { get; set; } = new();
+        public List<PropertyImageDto> Images { get; set; } = new();
+        public PropertyLandlordDto Landlord { get; set; } = new();
+        public PropertyRatingDto Rating { get; set; } = new();
+        public List<ReviewResponseDto> Reviews { get; set; } = new();
+
+        public bool IsFavorite { get; set; }
+        public bool IsApproved { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class PropertyAmenitiesDto
+    {
+        public bool HasParking { get; set; }
+        public bool HasElevator { get; set; }
+        public bool IsFurnished { get; set; }
+        public bool HasPool { get; set; }
+    }
+
+    public class PropertyImageDto
+    {
+        public int Id { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public bool IsMain { get; set; }
+    }
+
+    public class PropertyLandlordDto
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string ProfileImage { get; set; } = string.Empty;
+    }
+
+    public class PropertyRatingDto
+    {
+        public decimal AverageScore { get; set; }
+        public int TotalReviews { get; set; }
     }
 }

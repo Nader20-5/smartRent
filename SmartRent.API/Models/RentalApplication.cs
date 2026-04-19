@@ -1,8 +1,9 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("RentalApplications")]
     public class RentalApplication
     {
         [Key]
@@ -22,15 +23,21 @@ namespace SmartRent.API.Models
 
         [Required]
         [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
+        public string Status { get; set; } = "Pending"; 
 
-        [MaxLength(1000)]
-        public string? CoverLetter { get; set; }
+        [Required]
+        public DateTime MoveInDate { get; set; } 
 
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal? ProposedRent { get; set; }
+        public DateTime? LeaseEndDate { get; set; } 
 
-        public DateTime? MoveInDate { get; set; }
+        [Required]
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal ProposedRent { get; set; }
+
+        [MaxLength(2000)]
+        public string? CoverLetter { get; set; } 
+
+        public string? Notes { get; set; }
 
         [MaxLength(500)]
         public string? RejectionReason { get; set; }
@@ -39,7 +46,6 @@ namespace SmartRent.API.Models
 
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation properties
         public ICollection<ApplicationDocument> Documents { get; set; } = new List<ApplicationDocument>();
     }
 }
