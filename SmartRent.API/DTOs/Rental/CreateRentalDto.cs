@@ -17,6 +17,9 @@ namespace SmartRent.API.DTOs.Rental
         [DataType(DataType.Date)]
         public DateTime? MoveInDate { get; set; }
 
+        [DataType(DataType.Date)]
+        public DateTime? LeaseEndDate { get; set; }
+
         [Required(ErrorMessage = "Please upload at least one supporting document (ID, Salary, etc.).")]
         public List<IFormFile> Documents { get; set; } = new List<IFormFile>();
     }

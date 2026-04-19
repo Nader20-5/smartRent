@@ -112,21 +112,19 @@ const MyProperties = () => {
       <main className="dashboard-content">
         {/* Header */}
         <div className="dashboard-header">
-          <div className="dashboard-header-row">
-            <div>
-              <h1 className="dashboard-title">My Properties</h1>
-              <p className="dashboard-subtitle">
-                Manage and monitor all of your listed properties
-              </p>
-            </div>
-            <button
-              className="btn btn-primary"
-              onClick={handleAddProperty}
-              id="add-property-btn"
-            >
-              <FaPlus /> Add Property
-            </button>
+          <div>
+            <h1 className="dashboard-title">My Properties</h1>
+            <p className="dashboard-subtitle">
+              Manage and monitor all of your listed properties
+            </p>
           </div>
+          <button
+            className="btn btn-primary"
+            onClick={handleAddProperty}
+            id="add-property-btn"
+          >
+            <FaPlus /> Add Property
+          </button>
         </div>
 
         {/* Search & Filter */}

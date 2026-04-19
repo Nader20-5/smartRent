@@ -12,6 +12,7 @@ import {
   getAllProperties,
   toggleUserStatus,
 } from "../../services/adminService";
+import NotificationBell from "../../components/NotificationBell";
 import "./AdminDashboard.css";
 
 // ─── Helper: Format date ────────────────────────
@@ -48,7 +49,7 @@ const getInitials = (name) => {
 };
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
 
   // Data state
   const [landlords, setLandlords] = useState([]);
@@ -317,6 +318,7 @@ const AdminDashboard = () => {
             <p>System overview and verification requests.</p>
           </div>
           <div className="admin-topbar-right">
+            {token && <NotificationBell token={token} />}
             <div className="topbar-user">
               <div className="topbar-user-info">
                 <div className="topbar-user-name">{user?.fullName || "Admin"}</div>

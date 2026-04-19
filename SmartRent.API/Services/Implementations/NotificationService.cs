@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR; 
+using Microsoft.AspNetCore.SignalR; 
 using Microsoft.EntityFrameworkCore;
 using SmartRent.API.Data;
 using SmartRent.API.DTOs.Common;
@@ -43,7 +43,7 @@ namespace SmartRent.API.Services.Implementations
             }
             catch (Exception ex)
             {
-                return ServiceResult<bool>.FailureResult($"Error creating notification: {ex.Message}");
+                return ServiceResult<bool>.FailureResult($"Error creating notification: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
 

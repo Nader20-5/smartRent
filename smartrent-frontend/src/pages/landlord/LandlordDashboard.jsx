@@ -12,6 +12,8 @@ import {
 } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import PropertyCard from "../../components/PropertyCard";
+import NotificationBell from "../../components/NotificationBell";
+import { useAuth } from "../../context/AuthContext";
 import { getMyProperties, deleteProperty } from "../../services/propertyService";
 
 const DUMMY_ACTIVITY = [
@@ -65,6 +67,7 @@ const DUMMY_ACTIVITY = [
 const LandlordDashboard = () => {
   const [activeTab, setActiveTab] = useState("activity");
   const [properties, setProperties] = useState([]);
+  const { token } = useAuth();
 
   React.useEffect(() => {
     const fetchProperties = async () => {
@@ -112,10 +115,13 @@ const LandlordDashboard = () => {
       <main className="dashboard-content">
         {/* ── Page Header ── */}
         <div className="dashboard-header">
-          <h1 className="dashboard-title">Dashboard</h1>
-          <p className="dashboard-subtitle">
-            Welcome back! Here's an overview of your property portfolio.
-          </p>
+          <div>
+            <h1 className="dashboard-title">Dashboard</h1>
+            <p className="dashboard-subtitle">
+              Welcome back! Here's an overview of your property portfolio.
+            </p>
+          </div>
+          {token && <NotificationBell token={token} />}
         </div>
 
         {/* ══════ Stats Row ══════ */}

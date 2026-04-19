@@ -36,13 +36,6 @@ const AMENITY_CONFIG = [
 ];
 
 
-const STATUS_BADGE_MAP = {
-  Available: "badge-success",
-  "Pending Approval": "badge-warning",
-  Approved: "badge-success",
-  Rejected: "badge-error",
-};
-
 const formatPrice = (price) =>
   `$${price.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
@@ -127,9 +120,12 @@ const PropertyDetails = () => {
             <section className="detail-gallery" id="detail-gallery">
               <div className="detail-gallery-main">
                 <img src={currentImage} alt={property.title} className="detail-gallery-main-image" />
-                <span className={`detail-gallery-badge badge ${STATUS_BADGE_MAP[property.rentalStatus] || "badge-info"}`}>
-                  {property.rentalStatus}
-                </span>
+                <div className="property-card-tags">
+                  <span className={`property-card-tag ${property.rentalStatus === 'Available' ? 'tag-success' : 'tag-info'}`}>
+                    {property.rentalStatus === 'Available' && <span className="status-dot"></span>}
+                    {property.rentalStatus}
+                  </span>
+                </div>
               </div>
               {thumbnails.length > 1 && (
                 <div className="detail-gallery-thumbnails">

@@ -20,12 +20,7 @@ const AMENITY_CONFIG = [
   { key: "hasPool", label: "Pool", icon: FaSwimmingPool },
 ];
 
-const STATUS_BADGE_MAP = {
-  Available: "badge-success",
-  "Pending Approval": "badge-warning",
-  Approved: "badge-success",
-  Rejected: "badge-error",
-};
+
 
 const formatPrice = (price) => {
   return `$${price.toLocaleString("en-US", {
@@ -99,14 +94,37 @@ const PropertyCard = ({
         {/* Gradient overlay for text readability */}
         <div className="property-card-image-overlay" />
 
-        {/* Status / Featured badge */}
-        <span
-          className={`property-card-badge badge ${
-            STATUS_BADGE_MAP[property.rentalStatus] || "badge-info"
-          }`}
-        >
-          {property.rentalStatus}
-        </span>
+        {/* Premium Top Tags */}
+        <div className="property-card-tags">
+          {/* Rental Status */}
+          <span
+            className={`property-card-tag ${
+              property.rentalStatus === "Available" ? "tag-success" : "tag-info"
+            }`}
+          >
+            {property.rentalStatus === "Available" && <span className="status-dot"></span>}
+            {property.rentalStatus}
+          </span>
+
+          {/* Admin Approval Status */}
+          {variant === "landlord" && (
+            <span
+              className={`property-card-tag ${
+                property.isApproved
+                  ? "tag-success"
+                  : !property.isActive
+                  ? "tag-error"
+                  : "tag-warning"
+              }`}
+            >
+              {property.isApproved
+                ? "Approved"
+                : !property.isActive
+                ? "Rejected"
+                : "Pending"}
+            </span>
+          )}
+        </div>
 
         {/* Tenant: heart button */}
         {variant === "tenant" && (
@@ -155,24 +173,10 @@ const PropertyCard = ({
           </div>
         )}
 
-        {/* Landlord variant: action buttons + status */}
+        {/* Landlord variant: action buttons only. Status handled overhead. */}
         {variant === "landlord" && (
           <div className="property-card-actions">
-            <span
-              className={`property-card-status badge ${
-                property.isApproved
-                  ? "badge-success"
-                  : !property.isActive
-                  ? "badge-error"
-                  : "badge-warning"
-              }`}
-            >
-              {property.isApproved
-                ? "Approved"
-                : !property.isActive
-                ? "Rejected"
-                : "Pending Approval"}
-            </span>
+            <div></div> {/* spacer to push buttons right */}
             <div className="property-card-action-buttons">
               <button
                 className="property-card-action-btn action-edit"

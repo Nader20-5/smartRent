@@ -11,6 +11,7 @@ namespace SmartRent.API.DTOs.Rental
         public string? CoverLetter { get; set; }
         public decimal? ProposedRent { get; set; }
         public DateTime? MoveInDate { get; set; }
+        public DateTime? LeaseEndDate { get; set; }
         public string? RejectionReason { get; set; }
 
         public List<string> DocumentUrls { get; set; } = new();

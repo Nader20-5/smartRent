@@ -1,83 +1,45 @@
 import api from "./api";
 
-/**
- * --- VISIT SERVICES (تم إنجازها سابقاً) ---
- */
-export const createVisit = async (data) => {
-    const response = await api.post("/visits", data);
-    return response.data;
-};
+// ==========================================
+// Rental Application Services
+// ==========================================
 
-export const getMyVisits = async (params) => {
-    const response = await api.get("/visits/my-visits", { params });
-    return response.data;
-};
-
-export const getLandlordVisits = async (params) => {
-    const response = await api.get("/visits/landlord", { params });
-    return response.data;
-};
-
-export const approveVisit = async (id) => {
-    const response = await api.put(`/visits/${id}/approve`);
-    return response.data;
-};
-
-export const rejectVisit = async (id, reason) => {
-    const response = await api.put(`/visits/${id}/reject`, { reason });
-    return response.data;
-};
-
-export const cancelVisit = async (id) => {
-    const response = await api.put(`/visits/${id}/cancel`);
-    return response.data;
-};
-
-
-/**
- * --- RENTAL APPLICATION SERVICES (التاسك الجديد) ---
- */
-
-// إنشاء طلب إيجار جديد (مع دعم رفع الملفات)
+// Tenant: Create a new rental application (with file upload)
 export const createRentalApplication = async (formData) => {
-    const response = await api.post("/rentals", formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data', // ضروري لرفع المستندات
-        },
-    });
-    return response.data;
+  const response = await api.post("/rental", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
 };
 
-// للمستأجر: جلب طلبات الإيجار الخاصة به
+// Tenant: Get my rental applications
 export const getMyApplications = async (params) => {
-    const response = await api.get("/rentals/my-applications", { params });
-    return response.data;
+  const response = await api.get("/rental/tenant", { params });
+  return response.data;
 };
 
-// للمالك: جلب طلبات الإيجار الواصلة لعقاراته
+// Landlord: Get rental applications for my properties
 export const getLandlordApplications = async (params) => {
-    const response = await api.get("/rentals/landlord", { params });
-    return response.data;
+  const response = await api.get("/rental/landlord", { params });
+  return response.data;
 };
 
-// للمالك: الموافقة على طلب الإيجار
+// Landlord: Approve a rental application
 export const approveRental = async (id) => {
-    const response = await api.put(`/rentals/${id}/approve`);
-    return response.data;
+  const response = await api.put(`/rental/${id}/approve`);
+  return response.data;
 };
 
-// للمالك: رفض طلب الإيجار مع ذكر السبب
+// Landlord: Reject a rental application with reason
 export const rejectRental = async (id, reason) => {
-    const response = await api.put(`/rentals/${id}/reject`, { reason });
-    return response.data;
+  const response = await api.put(`/rental/${id}/reject`, { reason });
+  return response.data;
 };
 
-// رفع مستند إضافي لطلب موجود
+// Tenant: Upload additional document for existing application
 export const uploadDocument = async (id, formData) => {
-    const response = await api.put(`/rentals/${id}/upload-docs`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return response.data;
+  const response = await api.post(`/rental/${id}/documents`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
 };

@@ -1,4 +1,4 @@
-﻿using SmartRent.API.Data;
+using SmartRent.API.Data;
 using SmartRent.API.DTOs.Common;
 using SmartRent.API.DTOs.Rental;
 using SmartRent.API.Helpers;
@@ -35,19 +35,40 @@ namespace SmartRent.API.Services.Implementations
                 if (property is null)
                     return ServiceResult<RentalResponseDto>.FailureResult("Property is not available or doesn't exist.");
 
+                var moveIn = dto.MoveInDate ?? DateTime.UtcNow;
+                var leaseEnd = dto.LeaseEndDate;
+
+                // ── Date overlap validation ──
+                if (leaseEnd.HasValue)
+                {
+                    var hasOverlap = await _context.RentalApplications
+                        .AnyAsync(a =>
+                            a.PropertyId == dto.PropertyId &&
+                            a.Status == "Approved" &&
+                            a.LeaseEndDate != null &&
+                            a.MoveInDate < leaseEnd.Value &&
+                            a.LeaseEndDate > moveIn);
+
+                    if (hasOverlap)
+                    {
+                        return ServiceResult<RentalResponseDto>.FailureResult(
+                            "This property is already booked for the requested dates. Please choose different dates.");
+                    }
+                }
+
                 var application = new RentalApplication
                 {
                     PropertyId = dto.PropertyId,
                     TenantId = tenantId,
                     CoverLetter = dto.CoverLetter,
                     ProposedRent = dto.ProposedRent ?? 0m,
-                    MoveInDate = dto.MoveInDate ?? DateTime.UtcNow,
+                    MoveInDate = moveIn,
+                    LeaseEndDate = leaseEnd,
                     Status = "Pending",
                     CreatedAt = DateTime.Now 
                 };
 
                 _context.RentalApplications.Add(application);
-
                 await _context.SaveChangesAsync();
 
                 List<string> uploadedUrls = new List<string>();
@@ -56,16 +77,18 @@ namespace SmartRent.API.Services.Implementations
                     uploadedUrls = await UploadDocumentsAndGetUrlsAsync(application.Id, dto.Documents, "Initial Submission");
                 }
 
+                // ── Notify Landlord ──
                 try
                 {
                     await _notificationService.CreateAsync(
                         userId: property.LandlordId,
                         title: "New Rental Application",
-                        message: $"A new application has been submitted for: {property.Title}",
-                        link: application.Id.ToString()
+                        message: $"A new rental application has been submitted for: {property.Title}",
+                        type: "RentalApplication",
+                        link: "/landlord/rentals"
                     );
                 }
-                catch {  }
+                catch { }
 
                 var response = MapToResponseDto(application, property.Title, tenantId);
                 response.DocumentUrls = uploadedUrls;
@@ -84,7 +107,7 @@ namespace SmartRent.API.Services.Implementations
             var urls = new List<string>();
             foreach (var file in files)
             {
-                var fileUrl = await _fileUploadHelper.UploadFileAsync(file, "rentals/applications");
+                var fileUrl = await _fileUploadHelper.UploadFileAsync(file, "uploads/rentals/applications");
                 urls.Add(fileUrl);
 
                 _context.ApplicationDocuments.Add(new ApplicationDocument
@@ -117,21 +140,42 @@ namespace SmartRent.API.Services.Implementations
                 if (application.Status != "Pending")
                     return ServiceResult<bool>.FailureResult($"Application is already {application.Status}.");
 
+                // ── Re-validate date overlap before approving (race condition guard) ──
+                if (application.LeaseEndDate.HasValue)
+                {
+                    var hasOverlap = await _context.RentalApplications
+                        .AnyAsync(a =>
+                            a.PropertyId == application.PropertyId &&
+                            a.Id != applicationId &&
+                            a.Status == "Approved" &&
+                            a.LeaseEndDate != null &&
+                            a.MoveInDate < application.LeaseEndDate.Value &&
+                            a.LeaseEndDate > application.MoveInDate);
+
+                    if (hasOverlap)
+                    {
+                        return ServiceResult<bool>.FailureResult(
+                            "Cannot approve — this property already has an approved rental for overlapping dates.");
+                    }
+                }
+
                 application.Status = "Approved";
                 application.UpdatedAt = DateTime.UtcNow;
-                application.Property.IsActive = false;
 
-                await RejectOtherPendingApplicationsAsync(application.PropertyId, applicationId);
+                // Auto-reject other pending applications with overlapping dates
+                await RejectOverlappingPendingApplicationsAsync(application);
 
                 await _context.SaveChangesAsync();
 
+                // ── Notify Tenant ──
                 try
                 {
                     await _notificationService.CreateAsync(
                         userId: application.TenantId,
                         title: "Application Approved!",
                         message: $"Congratulations! Your application for '{application.Property.Title}' has been approved.",
-                        link: application.Id.ToString()
+                        type: "RentalApproval",
+                        link: "/my-applications"
                     );
                 }
                 catch { }
@@ -165,13 +209,15 @@ namespace SmartRent.API.Services.Implementations
 
                 await _context.SaveChangesAsync();
 
+                // ── Notify Tenant ──
                 try
                 {
                     await _notificationService.CreateAsync(
                         userId: application.TenantId,
                         title: "Rental Application Update",
                         message: $"Unfortunately, your application for '{application.Property.Title}' was rejected. Reason: {dto.Reason}",
-                        link: application.Id.ToString()
+                        type: "RentalRejection",
+                        link: "/my-applications"
                     );
                 }
                 catch { }
@@ -229,32 +275,57 @@ namespace SmartRent.API.Services.Implementations
                 BuildPagedResult(items, totalCount, pagination));
         }
 
-        private async Task RejectOtherPendingApplicationsAsync(int propertyId, int approvedApplicationId)
+        /// <summary>
+        /// When a rental is approved, auto-reject other pending applications
+        /// for the same property that have overlapping date ranges.
+        /// </summary>
+        private async Task RejectOverlappingPendingApplicationsAsync(RentalApplication approved)
         {
-            var otherApplications = await _context.RentalApplications
+            var pendingApps = await _context.RentalApplications
                 .Include(a => a.Property)
-                .Where(a => a.PropertyId == propertyId && a.Id != approvedApplicationId && a.Status == "Pending")
+                .Where(a =>
+                    a.PropertyId == approved.PropertyId &&
+                    a.Id != approved.Id &&
+                    a.Status == "Pending")
                 .ToListAsync();
 
-            foreach (var app in otherApplications)
+            foreach (var app in pendingApps)
             {
-                app.Status = "Rejected";
-                app.RejectionReason = "Property has been rented to another applicant.";
-                app.UpdatedAt = DateTime.UtcNow;
+                // Check date overlap: reject if ranges intersect
+                bool overlaps = false;
 
-                try
+                if (approved.LeaseEndDate.HasValue && app.LeaseEndDate.HasValue)
                 {
-                    await _notificationService.CreateAsync(
-                        userId: app.TenantId,
-                        title: "Rental Application Update",
-                        message: $"The property '{app.Property.Title}' is no longer available as it has been rented to another applicant.",
-                        link: app.Id.ToString()
-                    );
+                    overlaps = app.MoveInDate < approved.LeaseEndDate.Value &&
+                               app.LeaseEndDate > approved.MoveInDate;
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Notification failed for User {app.TenantId}: {ex.Message}");
-                    continue;
+                    // If no end date, treat as open-ended → always overlaps
+                    overlaps = true;
+                }
+
+                if (overlaps)
+                {
+                    app.Status = "Rejected";
+                    app.RejectionReason = "Property has been rented to another applicant for overlapping dates.";
+                    app.UpdatedAt = DateTime.UtcNow;
+
+                    try
+                    {
+                        await _notificationService.CreateAsync(
+                            userId: app.TenantId,
+                            title: "Rental Application Update",
+                            message: $"The property '{app.Property.Title}' is no longer available for your requested dates as it has been rented to another applicant.",
+                            type: "RentalRejection",
+                            link: "/my-applications"
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Notification failed for User {app.TenantId}: {ex.Message}");
+                        continue;
+                    }
                 }
             }
         }
@@ -269,7 +340,10 @@ namespace SmartRent.API.Services.Implementations
                 TenantId = tenantId,
                 Status = application.Status,
                 ProposedRent = application.ProposedRent, 
-                MoveInDate = application.MoveInDate,    
+                MoveInDate = application.MoveInDate,
+                LeaseEndDate = application.LeaseEndDate,
+                CoverLetter = application.CoverLetter,
+                RejectionReason = application.RejectionReason,
                 CreatedAt = application.CreatedAt,
                 DocumentUrls = application.Documents?.Select(d => d.DocumentUrl).ToList() ?? new List<string>()
             };

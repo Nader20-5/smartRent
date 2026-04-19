@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from 'react';
-// تأكدي من استيراد الدوال من الـ Service الصحيح كما اتفقنا
-import { getLandlordApplications, approveRental, rejectRental } from '../../services/rentalService'; 
+import { getLandlordApplications, approveRental, rejectRental } from '../../services/rentalService';
 import { toast } from 'react-toastify';
+import Sidebar from '../../components/Sidebar';
+import {
+  FaFileSignature,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaClock,
+  FaCalendarAlt,
+  FaExternalLinkAlt,
+} from 'react-icons/fa';
+
+const STATUS_CONFIG = {
+  Approved: { color: 'var(--color-success)', bg: 'rgba(16,185,129,0.12)', icon: FaCheckCircle },
+  Rejected: { color: 'var(--color-error)', bg: 'rgba(239,68,68,0.12)', icon: FaTimesCircle },
+  Pending: { color: 'var(--color-warning)', bg: 'rgba(245,158,11,0.12)', icon: FaClock },
+};
 
 const RentalRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -11,11 +25,16 @@ const RentalRequests = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await getLandlordApplications();
-      setRequests(data || []);
+      const res = await getLandlordApplications();
+      let items = [];
+      if (Array.isArray(res)) items = res;
+      else if (res?.data?.items) items = res.data.items;
+      else if (Array.isArray(res?.data)) items = res.data;
+      else if (res?.items) items = res.items;
+      setRequests(items);
     } catch (error) {
-      console.error("Error fetching rental requests:", error);
-      toast.error("Failed to load rental applications.");
+      console.error('Error fetching rental requests:', error);
+      toast.error('Failed to load rental applications.');
     } finally {
       setLoading(false);
     }
@@ -29,139 +48,273 @@ const RentalRequests = () => {
     try {
       if (action === 'approve') {
         await approveRental(id);
-        toast.success("Rental Application Approved!");
+        toast.success('Rental Application Approved!');
       } else {
-        const reason = prompt("Enter rejection reason:");
+        const reason = prompt('Enter rejection reason:');
         if (reason === null) return;
         await rejectRental(id, reason);
-        toast.info("Application Rejected");
+        toast.info('Application Rejected');
       }
       fetchRequests();
     } catch (error) {
-      toast.error("Process failed. Please try again.");
+      const msg = error.response?.data?.message || error.response?.data || 'Action failed.';
+      toast.error(typeof msg === 'string' ? msg : 'Action failed.');
     }
   };
 
-  // تصفية البيانات بناءً على الحالة
-  const filteredRequests = requests.filter(req => 
+  const filteredRequests = requests.filter((req) =>
     filter === 'All' ? true : req.status === filter
   );
 
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-       <div className="rental-loader"></div>
-       <style>{`
-         .rental-loader { border: 4px solid #f3f3f3; border-top: 4px solid #1a237e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-       `}</style>
-    </div>
-  );
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
 
   return (
-    <div style={{ backgroundColor: '#f9fbfc', minHeight: '100vh', padding: '40px', fontFamily: "'Poppins', sans-serif" }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        
-        {/* Navigation Breadcrumb */}
-        <nav style={{ fontSize: '12px', color: '#bdc3c7', marginBottom: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>
-          MANAGEMENT / RENTAL APPLICATIONS
-        </nav>
-        
-        <h1 style={{ color: '#1a237e', fontWeight: '800', fontSize: '36px', marginBottom: '10px' }}>Rental Requests</h1>
-        <p style={{ color: '#7f8c8d', marginBottom: '40px' }}>Review tenant documents, income verification, and application details.</p>
+    <div className="dashboard-layout">
+      <Sidebar />
+      <main className="dashboard-content">
+        {/* Header */}
+        <div className="dashboard-header">
+          <div>
+            <h1 className="dashboard-title">Rental Applications</h1>
+            <p className="dashboard-subtitle">
+              Review tenant applications, income proposals, and supporting documents.
+            </p>
+          </div>
+        </div>
 
-        {/* Filter Tabs - زي الـ Visits بالظبط */}
-        <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-          {['All', 'Pending', 'Approved', 'Rejected'].map(statusOption => (
-            <button 
-              key={statusOption} 
-              onClick={() => setFilter(statusOption)}
-              style={{
-                padding: '10px 25px', borderRadius: '50px', border: 'none',
-                backgroundColor: filter === statusOption ? '#1a237e' : '#fff',
-                color: filter === statusOption ? '#fff' : '#7f8c8d',
-                fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', transition: '0.3s'
-              }}
-            > {statusOption} </button>
+        {/* Filter Tabs */}
+        <div className="dashboard-tabs" id="rental-filter-tabs" style={{ marginBottom: 'var(--space-6)' }}>
+          {['All', 'Pending', 'Approved', 'Rejected'].map((opt) => (
+            <button
+              key={opt}
+              className={`dashboard-tab ${filter === opt ? 'is-active' : ''}`}
+              onClick={() => setFilter(opt)}
+            >
+              {opt}
+              {opt !== 'All' && (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    fontSize: 'var(--font-size-xs)',
+                    opacity: 0.6,
+                  }}
+                >
+                  ({requests.filter((r) => (opt === 'All' ? true : r.status === opt)).length})
+                </span>
+              )}
+            </button>
           ))}
         </div>
 
-        {/* Table Container */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.02)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: '#fcfdfe' }}>
-              <tr style={{ borderBottom: '1px solid #f0f2f5', color: '#bdc3c7', fontSize: '11px', textTransform: 'uppercase' }}>
-                <th style={{ padding: '20px' }}>Applicant Profile</th>
-                <th>Financial Info</th>
-                <th>Verification</th>
-                <th>Status</th>
-                <th style={{ paddingRight: '20px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.length > 0 ? filteredRequests.map(req => (
-                <tr key={req._id || req.id} style={{ borderBottom: '1px solid #f9fbfc' }}>
-                  {/* Tenant Info */}
-                  <td style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ width: '45px', height: '45px', backgroundColor: '#e8eaf6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>👤</div>
-                    <div>
-                      <div style={{ fontWeight: '700', color: '#1a237e' }}>{req.tenantName || 'Applicant'}</div>
-                      <div style={{ fontSize: '12px', color: '#95a5a6' }}>{req.occupation || 'No Occupation'}</div>
-                    </div>
-                  </td>
-
-                  {/* Monthly Income */}
-                  <td>
-                    <div style={{ fontWeight: '700', color: '#2e7d32' }}>${req.monthlyIncome}</div>
-                    <div style={{ fontSize: '11px', color: '#bdc3c7' }}>Monthly Income</div>
-                  </td>
-
-                  {/* Documents Link */}
-                  <td>
-                    {req.documents ? (
-                      <a href={req.documents} target="_blank" rel="noreferrer" 
-                         style={{ color: '#1a237e', textDecoration: 'none', fontWeight: '700', fontSize: '13px', borderBottom: '2px solid #e8eaf6' }}>
-                        View Documents 📄
-                      </a>
-                    ) : <span style={{color: '#cbd5e1', fontSize: '13px'}}>No Docs Provided</span>}
-                  </td>
-
-                  {/* Status Badge */}
-                  <td>
-                    <span style={{ 
-                      padding: '6px 16px', borderRadius: '50px', fontSize: '10px', fontWeight: '800',
-                      backgroundColor: req.status === 'Approved' ? '#e8f5e9' : req.status === 'Rejected' ? '#ffebee' : '#fff3e0',
-                      color: req.status === 'Approved' ? '#2e7d32' : req.status === 'Rejected' ? '#c62828' : '#ef6c00'
-                    }}> {req.status?.toUpperCase()} </span>
-                  </td>
-
-                  {/* Action Buttons */}
-                  <td style={{ paddingRight: '20px', textAlign: 'right' }}>
-                    {req.status === 'Pending' && (
-                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                        <button 
-                          onClick={() => handleAction(req._id || req.id, 'approve')} 
-                          style={{ backgroundColor: '#1a237e', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
-                        >Approve</button>
-                        <button 
-                          onClick={() => handleAction(req._id || req.id, 'reject')} 
-                          style={{ backgroundColor: 'transparent', color: '#ef5350', border: '1px solid #ef5350', padding: '10px 20px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
-                        >Reject</button>
-                      </div>
-                    )}
-                  </td>
+        {/* Loading */}
+        {loading ? (
+          <div className="loading-page">
+            <div className="spinner" />
+          </div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon-wrapper">
+              <FaFileSignature className="empty-state-icon" />
+            </div>
+            <h3 className="empty-state-title">No Applications Found</h3>
+            <p className="empty-state-text">
+              {filter !== 'All'
+                ? `No ${filter.toLowerCase()} rental applications at the moment.`
+                : 'No rental applications have been submitted yet.'}
+            </p>
+          </div>
+        ) : (
+          /* Table */
+          <div
+            style={{
+              background: 'var(--color-bg-card)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-xl)',
+              overflow: 'hidden',
+            }}
+          >
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                textAlign: 'left',
+                fontSize: 'var(--font-size-sm)',
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    borderBottom: '1px solid var(--color-border)',
+                    color: 'var(--color-text-muted)',
+                    fontSize: 'var(--font-size-xs)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: 600,
+                  }}
+                >
+                  <th style={{ padding: 'var(--space-4) var(--space-5)' }}>Applicant</th>
+                  <th>Proposed Rent</th>
+                  <th>Lease Period</th>
+                  <th>Documents</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right', paddingRight: 'var(--space-5)' }}>Actions</th>
                 </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '60px', color: '#95a5a6' }}>
-                    <div style={{ fontSize: '40px', marginBottom: '10px' }}>📂</div>
-                    No rental applications found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {filteredRequests.map((req) => {
+                  const cfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.Pending;
+                  const StatusIcon = cfg.icon;
+                  return (
+                    <tr
+                      key={req.id}
+                      style={{
+                        borderBottom: '1px solid var(--color-border-light)',
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      {/* Applicant */}
+                      <td style={{ padding: 'var(--space-4) var(--space-5)' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                          {req.tenantName || 'Applicant'}
+                        </div>
+                        {req.coverLetter && (
+                          <div
+                            style={{
+                              fontSize: 'var(--font-size-xs)',
+                              color: 'var(--color-text-muted)',
+                              marginTop: 2,
+                              maxWidth: 200,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            "{req.coverLetter}"
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Proposed Rent */}
+                      <td>
+                        <span style={{ fontWeight: 700, color: 'var(--color-success)' }}>
+                          ${req.proposedRent?.toLocaleString() || '—'}
+                        </span>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                          /month
+                        </div>
+                      </td>
+
+                      {/* Lease Period */}
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <FaCalendarAlt style={{ color: 'var(--color-primary-light)', fontSize: '0.7rem' }} />
+                          <div>
+                            <div style={{ fontWeight: 500 }}>{formatDate(req.moveInDate)}</div>
+                            {req.leaseEndDate && (
+                              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                to {formatDate(req.leaseEndDate)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Documents */}
+                      <td>
+                        {req.documentUrls && req.documentUrls.length > 0 ? (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {req.documentUrls.map((url, i) => (
+                              <a
+                                key={i}
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  padding: '3px 10px',
+                                  background: 'rgba(99,102,241,0.08)',
+                                  border: '1px solid rgba(99,102,241,0.15)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  fontSize: 'var(--font-size-xs)',
+                                  fontWeight: 600,
+                                  color: 'var(--color-primary-light)',
+                                  textDecoration: 'none',
+                                }}
+                              >
+                                Doc {i + 1} <FaExternalLinkAlt style={{ fontSize: '0.55rem' }} />
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
+                            No documents
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            padding: '4px 12px',
+                            borderRadius: 'var(--radius-full)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontWeight: 700,
+                            background: cfg.bg,
+                            color: cfg.color,
+                          }}
+                        >
+                          <StatusIcon style={{ fontSize: '0.65rem' }} />
+                          {req.status?.toUpperCase()}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ textAlign: 'right', paddingRight: 'var(--space-5)' }}>
+                        {req.status === 'Pending' && (
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleAction(req.id, 'approve')}
+                              id={`approve-rental-${req.id}`}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                background: 'transparent',
+                                color: 'var(--color-error)',
+                                border: '1px solid var(--color-error)',
+                              }}
+                              onClick={() => handleAction(req.id, 'reject')}
+                              id={`reject-rental-${req.id}`}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

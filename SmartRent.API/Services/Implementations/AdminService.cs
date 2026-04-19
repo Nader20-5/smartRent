@@ -9,10 +9,12 @@ namespace SmartRent.API.Services.Implementations
     public class AdminService : IAdminService
     {
         private readonly AppDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public AdminService(AppDbContext context)
+        public AdminService(AppDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<ServiceResult<PagedResult<User>>> GetAllUsersAsync(PaginationDto pagination)
@@ -147,6 +149,20 @@ namespace SmartRent.API.Services.Implementations
 
             property.IsApproved = true;
             await _context.SaveChangesAsync();
+
+            // Notify landlord about property approval
+            try 
+            {
+                await _notificationService.CreateAsync(
+                    property.LandlordId,
+                    "Property Approved",
+                    $"Your property '{property.Title}' has been approved and is now live.",
+                    "PropertyApproval",
+                    $"/properties/{property.Id}"
+                );
+            }
+            catch { /* non-blocking */ }
+
             return true;
         }
 

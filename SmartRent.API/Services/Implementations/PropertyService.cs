@@ -13,11 +13,13 @@ namespace SmartRent.API.Services.Implementations
     {
         private readonly AppDbContext _context;
         private readonly FileUploadHelper _fileUploadHelper;
+        private readonly INotificationService _notificationService;
 
-        public PropertyService(AppDbContext context, FileUploadHelper fileUploadHelper)
+        public PropertyService(AppDbContext context, FileUploadHelper fileUploadHelper, INotificationService notificationService)
         {
             _context = context;
             _fileUploadHelper = fileUploadHelper;
+            _notificationService = notificationService;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -74,6 +76,26 @@ namespace SmartRent.API.Services.Implementations
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Notify all admins about the new property
+                var admins = await _context.Users
+                    .Where(u => u.Role == "Admin")
+                    .Select(u => u.Id)
+                    .ToListAsync();
+
+                foreach (var adminId in admins)
+                {
+                    var notifRes = await _notificationService.CreateAsync(
+                        adminId,
+                        "New Property Action Required",
+                        $"A new property '{property.Title}' is pending approval.",
+                        "property",
+                        "/admin/dashboard" // Using correct link
+                    );
+                    if (!notifRes.Success) {
+                        throw new Exception($"Notification Error: {notifRes.Message}");
+                    }
+                }
 
                 var responseDto = await BuildPropertyResponseDtoAsync(property.Id, null);
                 return ServiceResult<PropertyResponseDto>.SuccessResult(responseDto!, "Property created successfully. Pending admin approval.");

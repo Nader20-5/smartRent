@@ -95,6 +95,20 @@
   background: rgba(239, 68, 68, 0.08);
 }
 
+.sidebar-theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  color: var(--color-primary-light);
+  font-weight: 600;
+}
+
+.sidebar-theme-toggle:hover {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--color-primary);
+}
+
 
 /* Dashboard Content Area */
 .dashboard-content {
@@ -106,6 +120,9 @@
 
 .dashboard-header {
   margin-bottom: var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .dashboard-header-row {

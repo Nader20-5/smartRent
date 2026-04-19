@@ -1,22 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import { getLandlordVisits, approveVisit, rejectVisit } from '../../services/visitService';
 import { toast } from 'react-toastify';
+import Sidebar from '../../components/Sidebar';
+import {
+  FaCalendarAlt,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaClock,
+  FaMapMarkerAlt,
+  FaUser,
+  FaEnvelope,
+} from 'react-icons/fa';
+
+const STATUS_CONFIG = {
+  Accepted: { color: 'var(--color-success)', bg: 'rgba(16,185,129,0.12)', icon: FaCheckCircle },
+  Approved: { color: 'var(--color-success)', bg: 'rgba(16,185,129,0.12)', icon: FaCheckCircle },
+  Rejected: { color: 'var(--color-error)', bg: 'rgba(239,68,68,0.12)', icon: FaTimesCircle },
+  Pending: { color: 'var(--color-warning)', bg: 'rgba(245,158,11,0.12)', icon: FaClock },
+};
 
 const VisitRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
 
-  // دالة جلب البيانات من السيرفر
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await getLandlordVisits();
-      // تأكدي إن الداتا اللي راجعة مصفوفة (Array)
-      setRequests(data || []); 
+      const res = await getLandlordVisits();
+      let items = [];
+      if (Array.isArray(res)) items = res;
+      else if (res?.data?.items) items = res.data.items;
+      else if (Array.isArray(res?.data)) items = res.data;
+      setRequests(items);
     } catch (error) {
       console.error("Error fetching requests:", error);
-      toast.error("Failed to load requests from server.");
+      toast.error("Failed to load visit requests.");
     } finally {
       setLoading(false);
     }
@@ -26,7 +45,6 @@ const VisitRequests = () => {
     fetchRequests();
   }, []);
 
-  // دالة الموافقة أو الرفض
   const handleAction = async (id, action) => {
     try {
       if (action === 'approve') {
@@ -39,109 +57,143 @@ const VisitRequests = () => {
         await rejectVisit(id, reason);
         toast.info("Visit Request Rejected");
       }
-      fetchRequests(); // تحديث الجدول بعد العملية
+      fetchRequests();
     } catch (error) {
       toast.error("Action failed. Please try again.");
     }
   };
 
-  // تصفية البيانات (Filtering)
   const filteredRequests = requests.filter(req => 
-    filter === 'All' ? true : req.status === filter
+    filter === 'All' ? true : (req.status === filter || (filter === 'Accepted' && req.status === 'Approved'))
   );
 
-  // واجهة التحميل (Loading Spinner)
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-       <div className="loader"></div>
-       <style>{`
-         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1a237e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-       `}</style>
-    </div>
-  );
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatTime = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
-    <div style={{ backgroundColor: '#f9fbfc', minHeight: '100vh', padding: '40px', fontFamily: "'Poppins', sans-serif" }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        
-        <nav style={{ fontSize: '12px', color: '#bdc3c7', marginBottom: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>
-          DASHBOARD / VISIT REQUESTS
-        </nav>
-        <h1 style={{ color: '#1a237e', fontWeight: '800', fontSize: '36px', marginBottom: '10px' }}>Visits Requests</h1>
-        <p style={{ color: '#7f8c8d', marginBottom: '40px' }}>Review and manage site visit applications for your properties.</p>
+    <div className="dashboard-layout">
+      <Sidebar />
+      <main className="dashboard-content">
+        <div className="dashboard-header">
+          <div>
+            <nav className="dashboard-breadcrumb" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Management / Visit Requests
+            </nav>
+            <h1 className="dashboard-title">Visit Requests</h1>
+            <p className="dashboard-subtitle">Manage site visit applications and schedule tours for your properties.</p>
+          </div>
+        </div>
 
-        {/* Filter Tabs */}
-        <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
+        <div className="dashboard-tabs" style={{ marginBottom: 'var(--space-6)' }}>
           {['All', 'Pending', 'Accepted', 'Rejected'].map(statusOption => (
             <button 
               key={statusOption} 
               onClick={() => setFilter(statusOption)}
-              style={{
-                padding: '10px 25px', borderRadius: '50px', border: 'none',
-                backgroundColor: filter === statusOption ? '#1a237e' : '#fff',
-                color: filter === statusOption ? '#fff' : '#7f8c8d',
-                fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', transition: '0.3s'
-              }}
-            > {statusOption} </button>
+              className={`dashboard-tab ${filter === statusOption ? 'is-active' : ''}`}
+            > 
+              {statusOption} 
+              {statusOption !== 'All' && (
+                <span style={{ marginLeft: 6, fontSize: 'var(--font-size-xs)', opacity: 0.6 }}>
+                  ({requests.filter(r => (statusOption === 'All' ? true : (r.status === statusOption || (statusOption === 'Accepted' && r.status === 'Approved')))).length})
+                </span>
+              )}
+            </button>
           ))}
         </div>
 
-        {/* Table Container */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.02)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: '#fcfdfe' }}>
-              <tr style={{ borderBottom: '1px solid #f0f2f5', color: '#bdc3c7', fontSize: '11px', textTransform: 'uppercase' }}>
-                <th style={{ padding: '20px' }}>Tenant Info</th>
-                <th>Property Details</th>
-                <th>Schedule</th>
-                <th>Status</th>
-                <th style={{ paddingRight: '20px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.length > 0 ? filteredRequests.map(req => (
-                <tr key={req.id} style={{ borderBottom: '1px solid #f9fbfc' }}>
-                  <td style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ width: '45px', height: '45px', backgroundColor: '#e8eaf6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>👤</div>
-                    <div>
-                      <div style={{ fontWeight: '700', color: '#1a237e' }}>{req.tenantName || 'N/A'}</div>
-                      <div style={{ fontSize: '12px', color: '#95a5a6' }}>{req.tenantEmail || 'No Email'}</div>
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: '700', color: '#2c3e50' }}>{req.propertyTitle || req.propertyName}</div>
-                    <div style={{ fontSize: '11px', color: '#1a237e', fontWeight: 'bold' }}>ID: #{req.propertyId}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: '600' }}>{new Date(req.requestedDate).toLocaleDateString()}</div>
-                    <div style={{ fontSize: '11px', color: '#bdc3c7' }}>{new Date(req.requestedDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                  </td>
-                  <td>
-                    <span style={{ 
-                      padding: '6px 16px', borderRadius: '50px', fontSize: '10px', fontWeight: '800',
-                      backgroundColor: (req.status === 'Accepted' || req.status === 'Approved') ? '#e8f5e9' : req.status === 'Rejected' ? '#ffebee' : '#fff3e0',
-                      color: (req.status === 'Accepted' || req.status === 'Approved') ? '#2e7d32' : req.status === 'Rejected' ? '#c62828' : '#ef6c00'
-                    }}> {req.status?.toUpperCase()} </span>
-                  </td>
-                  <td style={{ paddingRight: '20px' }}>
-                    {req.status === 'Pending' && (
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <button onClick={() => handleAction(req.id, 'approve')} style={{ backgroundColor: '#1a237e', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Accept</button>
-                        <button onClick={() => handleAction(req.id, 'reject')} style={{ backgroundColor: 'transparent', color: '#ef5350', border: '1px solid #ef5350', padding: '8px 15px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Reject</button>
-                      </div>
-                    )}
-                  </td>
+        {loading ? (
+          <div className="loading-page">
+            <div className="spinner" />
+          </div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon-wrapper">
+              <FaCalendarAlt className="empty-state-icon" />
+            </div>
+            <h3 className="empty-state-title">No Requests Found</h3>
+            <p className="empty-state-text">
+              {filter !== 'All' 
+                ? `No ${filter.toLowerCase()} visit requests currently.` 
+                : 'You haven\'t received any visit requests yet.'}
+            </p>
+          </div>
+        ) : (
+          <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 'var(--font-size-sm)' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  <th style={{ padding: 'var(--space-4) var(--space-5)' }}>Tenant</th>
+                  <th>Property</th>
+                  <th>Schedule</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right', paddingRight: 'var(--space-5)' }}>Actions</th>
                 </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#95a5a6' }}>No requests found for this category.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {filteredRequests.map(req => {
+                  const cfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.Pending;
+                  const StatusIcon = cfg.icon;
+                  return (
+                    <tr key={req.id} style={{ borderBottom: '1px solid var(--color-border-light)', transition: 'background 0.15s' }}>
+                      <td style={{ padding: 'var(--space-4) var(--space-5)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                          <div style={{ width: '40px', height: '40px', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary-light)' }}>
+                            <FaUser />
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{req.tenantName || 'N/A'}</div>
+                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <FaEnvelope style={{ fontSize: 10 }} /> {req.tenantEmail || 'No Email'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{req.propertyTitle || req.propertyName}</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-primary-light)', fontWeight: 700 }}>ID: #{req.propertyId}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <FaCalendarAlt style={{ color: 'var(--color-primary-light)', fontSize: '0.75rem' }} />
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{formatDate(req.requestedDate)}</div>
+                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>{formatTime(req.requestedDate)}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: 'var(--font-size-xs)', fontWeight: 700, background: cfg.bg, color: cfg.color }}>
+                          <StatusIcon style={{ fontSize: '0.65rem' }} />
+                          {req.status?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right', paddingRight: 'var(--space-5)' }}>
+                        {req.status === 'Pending' && (
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                            <button onClick={() => handleAction(req.id, 'approve')} className="btn btn-primary btn-sm">Accept</button>
+                            <button onClick={() => handleAction(req.id, 'reject')} className="btn btn-sm" style={{ background: 'transparent', color: 'var(--color-error)', border: '1px solid var(--color-error)' }}>Reject</button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

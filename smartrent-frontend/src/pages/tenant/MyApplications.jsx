@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getMyApplications } from '../../services/visitService';
+import { getMyApplications } from '../../services/rentalService';
 import { toast } from 'react-toastify';
 
 const MyApplications = () => {

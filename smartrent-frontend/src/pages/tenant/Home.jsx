@@ -137,7 +137,7 @@ const Home = () => {
       <section className="hero-section" id="hero-section">
         <div className="hero-backdrop" />
         <div className="hero-content">
-          <span className="hero-tagline">Welcome to Prophoria</span>
+          <span className="hero-tagline">Welcome to SmartRent</span>
           <h1 className="hero-title">Find Your Perfect Home</h1>
           <p className="hero-subtitle">
             Discover premium rental properties curated for modern living
@@ -212,11 +212,11 @@ const Home = () => {
             <p style={{ color: "var(--color-text-muted)" }}>Loading properties from backend...</p>
           </div>
         ) : error ? (
-           <div className="empty-state" id="error-state" style={{ color: "var(--color-error)" }}>
-              <FaTimesCircle style={{ fontSize: "3rem", marginBottom: "1rem" }} />
-              <h3>Connection Error</h3>
-              <p>{error}</p>
-           </div>
+          <div className="empty-state" id="error-state" style={{ color: "var(--color-error)" }}>
+            <FaTimesCircle style={{ fontSize: "3rem", marginBottom: "1rem" }} />
+            <h3>Connection Error</h3>
+            <p>{error}</p>
+          </div>
         ) : filteredProperties.length > 0 ? (
           <div className="property-grid" id="property-grid">
             {filteredProperties.map((property) => (

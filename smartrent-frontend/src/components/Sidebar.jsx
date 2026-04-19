@@ -1,17 +1,21 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { 
   FaChartLine, 
   FaBuilding, 
   FaCalendarAlt, 
   FaClipboardList, 
   FaSignOutAlt,
-  FaHome
+  FaHome,
+  FaMoon,
+  FaSun
 } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext";
 
 const Sidebar = () => {
   const { logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -43,6 +47,9 @@ const Sidebar = () => {
       </nav>
 
       <div className="sidebar-footer">
+        <button onClick={toggleTheme} className="sidebar-link sidebar-theme-toggle" title={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
+           {isDark ? <FaSun /> : <FaMoon />} {isDark ? "Light Mode" : "Dark Mode"}
+        </button>
         <NavLink to="/" className="sidebar-link sidebar-link-ghost" title="Back to Public Site">
            <FaHome /> Back to Site
         </NavLink>
