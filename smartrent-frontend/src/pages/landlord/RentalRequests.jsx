@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getLandlordApplications, approveRental, rejectRental } from '../../services/rentalService';
+import api from '../../services/api';
 import { toast } from 'react-toastify';
 import Sidebar from '../../components/Sidebar';
 import {
@@ -59,6 +60,32 @@ const RentalRequests = () => {
     } catch (error) {
       const msg = error.response?.data?.message || error.response?.data || 'Action failed.';
       toast.error(typeof msg === 'string' ? msg : 'Action failed.');
+    }
+  };
+
+  const handleDownloadDocument = async (url) => {
+    try {
+      toast.info('Decrypting and downloading...');
+      const response = await api.get(`/Document/download?url=${encodeURIComponent(url)}`, {
+        responseType: 'blob'
+      });
+      const blobURL = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = blobURL;
+      
+      // Try to extract original name or use generic
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `document_${Date.now()}`;
+      if (contentDisposition && contentDisposition.indexOf('filename=') !== -1) {
+        filename = contentDisposition.split('filename=')[1].replace(/["']/g, '');
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      toast.error('Failed to download document. Not authorized or not found.');
     }
   };
 
@@ -231,11 +258,9 @@ const RentalRequests = () => {
                         {req.documentUrls && req.documentUrls.length > 0 ? (
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {req.documentUrls.map((url, i) => (
-                              <a
+                              <button
                                 key={i}
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer"
+                                onClick={() => handleDownloadDocument(url)}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
@@ -248,10 +273,11 @@ const RentalRequests = () => {
                                   fontWeight: 600,
                                   color: 'var(--color-primary-light)',
                                   textDecoration: 'none',
+                                  cursor: 'pointer'
                                 }}
                               >
                                 Doc {i + 1} <FaExternalLinkAlt style={{ fontSize: '0.55rem' }} />
-                              </a>
+                              </button>
                             ))}
                           </div>
                         ) : (

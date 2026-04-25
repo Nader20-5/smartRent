@@ -13,7 +13,14 @@ namespace SmartRent.API.Hubs
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
 
-                Console.WriteLine($"[SignalR] User {userId} connected. Connection ID: {Context.ConnectionId}");
+                // Add to role-based groups
+                var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.IsNullOrEmpty(role))
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, $"Role_{role}");
+                }
+
+                Console.WriteLine($"[SignalR] User {userId} ({role}) connected. Connection ID: {Context.ConnectionId}");
             }
 
             await base.OnConnectedAsync();

@@ -107,7 +107,7 @@ namespace SmartRent.API.Services.Implementations
             var urls = new List<string>();
             foreach (var file in files)
             {
-                var fileUrl = await _fileUploadHelper.UploadFileAsync(file, "uploads/rentals/applications");
+                var fileUrl = await _fileUploadHelper.UploadFileAsync(file, "uploads/rentals/applications", encrypt: true);
                 urls.Add(fileUrl);
 
                 _context.ApplicationDocuments.Add(new ApplicationDocument

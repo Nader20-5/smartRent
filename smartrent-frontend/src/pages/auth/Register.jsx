@@ -40,8 +40,14 @@ const Register = () => {
       setError("Passwords do not match.");
       return;
     }
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must contain at least one uppercase, one lowercase, one number, and one special character.");
       return;
     }
 
@@ -59,10 +65,23 @@ const Register = () => {
         setTimeout(() => navigate("/login", { replace: true }), 4000);
       }
     } catch (err) {
-      const message =
-        err.response?.data?.message || err.response?.data?.title || err.response?.data ||
-        "Registration failed. Please try again.";
-      setError(typeof message === "string" ? message : "Registration failed. Please try again.");
+      const errData = err.response?.data;
+      let message = "Registration failed. Please try again.";
+
+      if (errData?.errors) {
+        // Handle .NET validation errors object (e.g. ModelState)
+        const firstErrorKey = Object.keys(errData.errors)[0];
+        const errorArray = errData.errors[firstErrorKey];
+        message = Array.isArray(errorArray) ? errorArray[0] : (typeof errorArray === 'string' ? errorArray : message);
+      } else if (errData?.message) {
+        message = errData.message;
+      } else if (errData?.title) {
+        message = errData.title;
+      } else if (typeof errData === "string") {
+        message = errData;
+      }
+
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -197,7 +216,7 @@ const Register = () => {
                       </svg>
                     </span>
                     <input id="register-password" type={showPassword ? "text" : "password"} name="password"
-                      className="reg-form-input has-right-icon" placeholder="Min. 6 chars"
+                      className="reg-form-input has-right-icon" placeholder="Min. 8 chars"
                       value={formData.password} onChange={handleChange} required />
                     <button type="button" className="reg-input-icon-right"
                       onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>

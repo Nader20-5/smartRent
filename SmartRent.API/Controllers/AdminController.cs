@@ -7,7 +7,7 @@ namespace SmartRent.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // NOTE: [Authorize(Roles = "Admin")] removed temporarily for test accounts with fake JWT tokens
+    [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _adminService;

@@ -12,11 +12,13 @@ namespace SmartRent.API.Services.Implementations
     {
         private readonly AppDbContext _context;
         private readonly JwtHelper _jwtHelper;
+        private readonly INotificationService _notificationService;
 
-        public AuthService(AppDbContext context, JwtHelper jwtHelper)
+        public AuthService(AppDbContext context, JwtHelper jwtHelper, INotificationService notificationService)
         {
             _context = context;
             _jwtHelper = jwtHelper;
+            _notificationService = notificationService;
         }
 
         public async Task<ServiceResult<AuthResponseDto>> RegisterAsync(RegisterDto dto)
@@ -41,6 +43,21 @@ namespace SmartRent.API.Services.Implementations
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            // Notify admins about new Landlord registration
+            if (user.Role == "Landlord")
+            {
+                try
+                {
+                    await _notificationService.NotifyAdminsAsync(
+                        "New Landlord Registered",
+                        $"A new landlord '{user.FullName}' has registered and is awaiting approval.",
+                        "LandlordRegistration",
+                        "/admin/dashboard" // Redirect to admin dashboard where they can approve
+                    );
+                }
+                catch { /* Non-blocking: registration shouldn't fail if notification fails */ }
+            }
 
             var token = _jwtHelper.GenerateToken(user);
 
@@ -71,15 +88,7 @@ namespace SmartRent.API.Services.Implementations
                 return ServiceResult<AuthResponseDto>.FailureResult("Your account is pending admin approval.");
             }
 
-            bool isPasswordValid = false;
-            if (user.PasswordHash == "hashed_pw" && dto.Password == "password123")
-            {
-                isPasswordValid = true; // Support for legacy hardcoded test accounts
-            }
-            else
-            {
-                isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
-            }
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
 
             if (!isPasswordValid)
             {

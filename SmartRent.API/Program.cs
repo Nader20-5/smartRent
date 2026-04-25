@@ -90,6 +90,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // Helpers
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<FileUploadHelper>();
+builder.Services.AddScoped<AesEncryptionHelper>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -148,11 +149,8 @@ var app = builder.Build();
 // ──────────────────────────────────────────────
 // Middleware Pipeline
 // ──────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
@@ -167,5 +165,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+
 
 app.Run();

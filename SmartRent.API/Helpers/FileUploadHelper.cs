@@ -7,6 +7,7 @@ namespace SmartRent.API.Helpers
     public class FileUploadHelper
     {
         private readonly IWebHostEnvironment _env;
+        private readonly AesEncryptionHelper _encryptionHelper;
 
         private static readonly HashSet<string> _allowedImageExtensions =
             new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
@@ -17,9 +18,10 @@ namespace SmartRent.API.Helpers
         private const long MaxImageSizeBytes = 5 * 1024 * 1024;    // 5 MB
         private const long MaxDocumentSizeBytes = 10 * 1024 * 1024; // 10 MB
 
-        public FileUploadHelper(IWebHostEnvironment env)
+        public FileUploadHelper(IWebHostEnvironment env, AesEncryptionHelper encryptionHelper)
         {
             _env = env;
+            _encryptionHelper = encryptionHelper;
         }
 
         /// <summary>
@@ -28,7 +30,7 @@ namespace SmartRent.API.Helpers
         /// <param name="file">The uploaded file.</param>
         /// <param name="folder">Relative folder under wwwroot — e.g. "uploads/properties/42"</param>
         /// <returns>Relative URL path — e.g. "/uploads/properties/42/abc123.jpg"</returns>
-        public async Task<string> UploadFileAsync(IFormFile file, string folder)
+        public async Task<string> UploadFileAsync(IFormFile file, string folder, bool encrypt = false)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("File is empty or null.", nameof(file));
@@ -39,12 +41,23 @@ namespace SmartRent.API.Helpers
             if (!Directory.Exists(absoluteFolder))
                 Directory.CreateDirectory(absoluteFolder);
 
-            var extension = Path.GetExtension(file.FileName);
+            var extension = encrypt ? $"{Path.GetExtension(file.FileName)}.enc" : Path.GetExtension(file.FileName);
             var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
             var absoluteFilePath = Path.Combine(absoluteFolder, uniqueFileName);
 
-            await using var stream = new FileStream(absoluteFilePath, FileMode.Create);
-            await file.CopyToAsync(stream);
+            await using var fileStream = new FileStream(absoluteFilePath, FileMode.Create);
+            
+            if (encrypt)
+            {
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+                await _encryptionHelper.EncryptStreamAsync(memoryStream, fileStream);
+            }
+            else
+            {
+                await file.CopyToAsync(fileStream);
+            }
 
             // Return URL-style relative path (forward slashes)
             var relativePath = Path.Combine(folder, uniqueFileName)

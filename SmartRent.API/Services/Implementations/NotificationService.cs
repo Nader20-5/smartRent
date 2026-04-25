@@ -47,6 +47,49 @@ namespace SmartRent.API.Services.Implementations
             }
         }
 
+        public async Task<ServiceResult<bool>> NotifyAdminsAsync(string title, string message, string? type = null, string? link = null)
+        {
+            try
+            {
+                var admins = await _context.Users
+                    .Where(u => u.Role == "Admin" && u.IsActive)
+                    .ToListAsync();
+
+                if (!admins.Any()) return ServiceResult<bool>.SuccessResult(true);
+
+                var notifications = admins.Select(a => new Notification
+                {
+                    UserId = a.Id,
+                    Title = title,
+                    Message = message,
+                    Type = type,
+                    Link = link,
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                }).ToList();
+
+                _context.Notifications.AddRange(notifications);
+                await _context.SaveChangesAsync();
+
+                // Broadcast to admins group via SignalR
+                await _hubContext.Clients.Group("Role_Admin").SendAsync("ReceiveNotification", new
+                {
+                    id = notifications.First().Id, // Just a reference, but usually the UI handles single items
+                    title = title,
+                    message = message,
+                    type = type,
+                    link = link,
+                    createdAt = DateTime.UtcNow
+                });
+
+                return ServiceResult<bool>.SuccessResult(true);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<bool>.FailureResult($"Error notifying admins: {ex.Message}");
+            }
+        }
+
         public async Task<ServiceResult<PagedResult<Notification>>> GetByUserAsync(int userId, PaginationDto pagination)
         {
             try
