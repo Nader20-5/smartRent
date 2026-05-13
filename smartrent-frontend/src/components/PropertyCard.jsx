@@ -102,7 +102,8 @@ const PropertyCard = ({
         <div className="property-card-tags">
           <span
             className={`property-card-tag ${
-              property.rentalStatus === "Available" ? "tag-success" : "tag-info"
+              property.rentalStatus === "Available" ? "tag-success" : 
+              property.rentalStatus === "Rented" ? "tag-error" : "tag-info"
             }`}
           >
             {property.rentalStatus === "Available" && <span className="status-dot"></span>}

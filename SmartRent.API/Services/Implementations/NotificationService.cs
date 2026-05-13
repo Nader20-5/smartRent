@@ -24,7 +24,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var notification = new Notification { UserId = userId, Title = title, Message = message, Type = type, Link = link, IsRead = false, CreatedAt = DateTime.UtcNow };
+                var notification = new Notification { UserId = userId, Title = title, Message = message, Type = type ?? "General", Link = link, IsRead = false, CreatedAt = DateTime.UtcNow };
 
                 await _unitOfWork.Notifications.AddAsync(notification);
                 await _unitOfWork.SaveChangesAsync();
@@ -62,7 +62,7 @@ namespace SmartRent.API.Services.Implementations
                     UserId = a.Id,
                     Title = title,
                     Message = message,
-                    Type = type,
+                    Type = type ?? "General",
                     Link = link,
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow

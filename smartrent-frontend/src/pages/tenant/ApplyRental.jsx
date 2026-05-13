@@ -5,13 +5,12 @@ import { getPropertyById } from '../../services/propertyService';
 import { toast } from 'react-toastify';
 import {
   FaFileSignature,
-  FaCalendarAlt,
   FaMoneyBillWave,
   FaEnvelopeOpenText,
   FaCloudUploadAlt,
   FaChevronLeft,
   FaCheckCircle,
-  FaExclamationTriangle,
+  FaTimesCircle,
 } from 'react-icons/fa';
 
 const ApplyRental = () => {
@@ -21,8 +20,6 @@ const ApplyRental = () => {
   const [property, setProperty] = useState(null);
   const [formData, setFormData] = useState({
     proposedRent: '',
-    moveInDate: '',
-    leaseEndDate: '',
     coverLetter: '',
     documents: null,
   });
@@ -39,46 +36,9 @@ const ApplyRental = () => {
     fetchProperty();
   }, [propertyId]);
 
-  // Get tomorrow as minimum selectable date
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const minDate = tomorrow.toISOString().split('T')[0];
-
-  const isRangeOccupied = (startStr, endStr) => {
-    if (!property || !property.occupiedRanges || !startStr) return false;
-    const selectedStart = new Date(startStr);
-    const selectedEnd = endStr ? new Date(endStr) : null;
-
-    return property.occupiedRanges.some(range => {
-      const occupiedStart = new Date(range.startDate);
-      const occupiedEnd = range.endDate ? new Date(range.endDate) : null;
-
-      if (!occupiedEnd) {
-        // If existing occupancy is indefinite
-        if (!selectedEnd) return selectedStart >= occupiedStart;
-        return selectedEnd >= occupiedStart;
-      }
-
-      // Check for overlap: (StartA <= EndB) and (EndA >= StartB)
-      if (selectedEnd) {
-        return selectedStart <= occupiedEnd && selectedEnd >= occupiedStart;
-      } else {
-        // If user hasn't picked an end date yet, just check if move-in is inside an occupied range
-        return selectedStart <= occupiedEnd && selectedStart >= occupiedStart;
-      }
-    });
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
-    if (name === 'moveInDate' && isRangeOccupied(value, formData.leaseEndDate)) {
-      toast.warning("The selected move-in date is within an already rented period.");
-    }
-    if (name === 'leaseEndDate' && isRangeOccupied(formData.moveInDate, value)) {
-      toast.warning("The selected lease period overlaps with an existing rental.");
-    }
   };
 
   const handleFileChange = (e) => {
@@ -88,27 +48,11 @@ const ApplyRental = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate date overlaps
-    if (isRangeOccupied(formData.moveInDate, formData.leaseEndDate)) {
-      toast.error('The selected period overlaps with an existing rental. Please choose different dates.');
-      return;
-    }
-
-    // Validate date range
-    if (formData.moveInDate && formData.leaseEndDate) {
-      if (new Date(formData.leaseEndDate) <= new Date(formData.moveInDate)) {
-        toast.error('Lease end date must be after the move-in date.');
-        return;
-      }
-    }
-
     setLoading(true);
 
     const data = new FormData();
     data.append('PropertyId', propertyId);
     data.append('ProposedRent', formData.proposedRent);
-    data.append('MoveInDate', formData.moveInDate);
-    data.append('LeaseEndDate', formData.leaseEndDate);
     data.append('CoverLetter', formData.coverLetter);
 
     if (formData.documents) {
@@ -170,171 +114,131 @@ const ApplyRental = () => {
             )}
           </div>
 
-          {/* Availability Alert */}
-          {property && property.occupiedRanges && property.occupiedRanges.length > 0 && (
+          {/* Rented Alert */}
+          {property && property.rentalStatus === "Rented" && (
             <div style={{
-              background: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
               borderRadius: 'var(--radius-lg)',
-              padding: '1rem',
+              padding: '1.5rem',
               marginBottom: '2rem',
               display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
               gap: 12
             }}>
-              <FaExclamationTriangle style={{ color: '#f59e0b', fontSize: '1.2rem', marginTop: 2 }} />
+              <FaTimesCircle style={{ color: 'var(--color-error)', fontSize: '2.5rem' }} />
               <div>
-                <h4 style={{ color: '#92400e', fontSize: '14px', fontWeight: 700, marginBottom: 4 }}>Note on Availability</h4>
-                <p style={{ color: '#92400e', fontSize: '13px', lineHeight: 1.5 }}>
-                  This property is currently occupied during the following periods:
-                  <ul style={{ marginTop: 8, paddingLeft: 16 }}>
-                    {property.occupiedRanges.map((range, idx) => (
-                      <li key={idx}>
-                        {new Date(range.startDate).toLocaleDateString()} to {range.endDate ? new Date(range.endDate).toLocaleDateString() : 'Indefinite'}
-                      </li>
-                    ))}
-                  </ul>
+                <h4 style={{ color: 'var(--color-error)', fontSize: '18px', fontWeight: 700, marginBottom: 8 }}>Property Already Rented</h4>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: 1.5 }}>
+                  This property is currently off the market as it has been successfully rented. No further applications are being accepted at this time.
                 </p>
+                <Link to="/" className="btn btn-secondary" style={{ marginTop: '1rem' }}>Browse Other Properties</Link>
               </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-            {/* Date Range Row */}
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">
-                  <FaCalendarAlt style={{ marginRight: 6, color: 'var(--color-primary-light)' }} />
-                  Move-in Date *
-                </label>
-                <input
-                  type="date"
-                  name="moveInDate"
-                  className={`form-input ${isRangeOccupied(formData.moveInDate, formData.leaseEndDate) ? 'is-error' : ''}`}
-                  required
-                  min={minDate}
-                  value={formData.moveInDate}
-                  onChange={handleChange}
-                  id="input-move-in-date"
-                />
-                {isRangeOccupied(formData.moveInDate, formData.leaseEndDate) && (
-                  <span className="form-error-text" style={{ color: '#ef4444', fontSize: '12px', marginTop: 4 }}>
-                    This period overlaps with an existing rental.
-                  </span>
-                )}
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  <FaCalendarAlt style={{ marginRight: 6, color: 'var(--color-primary-light)' }} />
-                  Lease End Date *
-                </label>
-                <input
-                  type="date"
-                  name="leaseEndDate"
-                  className="form-input"
-                  required
-                  min={formData.moveInDate || minDate}
-                  value={formData.leaseEndDate}
-                  onChange={handleChange}
-                  id="input-lease-end-date"
-                />
-              </div>
-            </div>
 
-            {/* Proposed Rent */}
-            <div className="form-group">
-              <label className="form-label">
-                <FaMoneyBillWave style={{ marginRight: 6, color: 'var(--color-success)' }} />
-                Proposed Monthly Rent ($) *
-              </label>
-              <input
-                type="number"
-                name="proposedRent"
-                className="form-input"
-                placeholder={property ? `Listing price: $${property.price}` : "e.g. 5000"}
-                required
-                min="1"
-                value={formData.proposedRent}
-                onChange={handleChange}
-                id="input-proposed-rent"
-              />
-            </div>
+            {property && property.rentalStatus !== "Rented" && (
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
-            {/* Cover Letter */}
-            <div className="form-group">
-              <label className="form-label">
-                <FaEnvelopeOpenText style={{ marginRight: 6, color: 'var(--color-info)' }} />
-                Cover Letter (Optional)
-              </label>
-              <textarea
-                name="coverLetter"
-                className="form-textarea"
-                placeholder="Introduce yourself to the landlord. Mention your occupation, reason for renting, etc."
-                rows="4"
-                value={formData.coverLetter}
-                onChange={handleChange}
-                id="input-cover-letter"
-              />
-            </div>
+                {/* Proposed Rent */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <FaMoneyBillWave style={{ marginRight: 6, color: 'var(--color-success)' }} />
+                    Proposed Monthly Rent ($) *
+                  </label>
+                  <input
+                    type="number"
+                    name="proposedRent"
+                    className="form-input"
+                    placeholder={property ? `Listing price: $${property.price}` : "e.g. 5000"}
+                    required
+                    min="1"
+                    value={formData.proposedRent}
+                    onChange={handleChange}
+                    id="input-proposed-rent"
+                  />
+                </div>
 
-            {/* Document Upload */}
-            <div className="form-group">
-              <label className="form-label">
-                <FaCloudUploadAlt style={{ marginRight: 6, color: 'var(--color-warning)' }} />
-                Supporting Documents *
-              </label>
-              <div
-                style={{
-                  border: '2px dashed var(--color-border)',
-                  padding: 'var(--space-6)',
-                  borderRadius: 'var(--radius-lg)',
-                  textAlign: 'center',
-                  background: 'var(--color-bg-elevated)',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s',
-                }}
-              >
-                <FaCloudUploadAlt style={{ fontSize: '2rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }} />
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)' }}>
-                  Upload ID, Salary Slip, or Employment Letter (PDF, JPG, PNG)
-                </p>
-                <input
-                  type="file"
-                  multiple
-                  required
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleFileChange}
-                  style={{ fontSize: 'var(--font-size-sm)' }}
-                  id="input-documents"
-                />
-                {formData.documents && formData.documents.length > 0 && (
-                  <p style={{ marginTop: 'var(--space-2)', color: 'var(--color-success)', fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>
-                    <FaCheckCircle style={{ marginRight: 4 }} />
-                    {formData.documents.length} file(s) selected
-                  </p>
-                )}
-              </div>
-            </div>
+                {/* Cover Letter */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <FaEnvelopeOpenText style={{ marginRight: 6, color: 'var(--color-info)' }} />
+                    Cover Letter (Optional)
+                  </label>
+                  <textarea
+                    name="coverLetter"
+                    className="form-textarea"
+                    placeholder="Introduce yourself to the landlord. Mention your occupation, reason for renting, etc."
+                    rows="4"
+                    value={formData.coverLetter}
+                    onChange={handleChange}
+                    id="input-cover-letter"
+                  />
+                </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg"
-              disabled={loading || isRangeOccupied(formData.moveInDate, formData.leaseEndDate)}
-              style={{ width: '100%', justifyContent: 'center', marginTop: 'var(--space-2)' }}
-              id="submit-rental-btn"
-            >
-              {loading ? (
-                <>
-                  <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <FaFileSignature /> Submit Application
-                </>
-              )}
-            </button>
-          </form>
+                {/* Document Upload */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <FaCloudUploadAlt style={{ marginRight: 6, color: 'var(--color-warning)' }} />
+                    Supporting Documents *
+                  </label>
+                  <div
+                    style={{
+                      border: '2px dashed var(--color-border)',
+                      padding: 'var(--space-6)',
+                      borderRadius: 'var(--radius-lg)',
+                      textAlign: 'center',
+                      background: 'var(--color-bg-elevated)',
+                      cursor: 'pointer',
+                      transition: 'border-color 0.2s',
+                    }}
+                  >
+                    <FaCloudUploadAlt style={{ fontSize: '2rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }} />
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)' }}>
+                      Upload ID, Salary Slip, or Employment Letter (PDF, JPG, PNG)
+                    </p>
+                    <input
+                      type="file"
+                      multiple
+                      required
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFileChange}
+                      style={{ fontSize: 'var(--font-size-sm)' }}
+                      id="input-documents"
+                    />
+                    {formData.documents && formData.documents.length > 0 && (
+                      <p style={{ marginTop: 'var(--space-2)', color: 'var(--color-success)', fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>
+                        <FaCheckCircle style={{ marginRight: 4 }} />
+                        {formData.documents.length} file(s) selected
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg"
+                  disabled={loading}
+                  style={{ width: '100%', justifyContent: 'center', marginTop: 'var(--space-2)' }}
+                  id="submit-rental-btn"
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <FaFileSignature /> Submit Application
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
         </div>
       </div>
     </div>

@@ -23,6 +23,7 @@ import {
   FaChevronLeft,
   FaUserCircle,
   FaQuoteLeft,
+  FaTimesCircle,
 } from "react-icons/fa";
 import { MdElevator, MdVerified } from "react-icons/md";
 import { toast } from "react-toastify";
@@ -191,7 +192,10 @@ const PropertyDetails = () => {
               <div className="detail-gallery-main">
                 <img src={currentImage} alt={property.title} className="detail-gallery-main-image" />
                 <div className="property-card-tags">
-                  <span className={`property-card-tag ${property.rentalStatus === 'Available' ? 'tag-success' : 'tag-info'}`}>
+                  <span className={`property-card-tag ${
+                    property.rentalStatus === 'Available' ? 'tag-success' : 
+                    property.rentalStatus === 'Rented' ? 'tag-error' : 'tag-info'
+                  }`}>
                     {property.rentalStatus === 'Available' && <span className="status-dot"></span>}
                     {property.rentalStatus}
                   </span>
@@ -416,15 +420,32 @@ const PropertyDetails = () => {
               </a>
               <hr className="booking-card-divider" />
               <div className="booking-card-actions">
-                {user?.role === "Tenant" ? (
-                  <Link to={`/book-visit/${property.id}`} className="btn btn-primary btn-lg booking-card-btn" id="book-visit-btn"><FaCalendarAlt /> Book a Visit</Link>
+                {property.rentalStatus === "Rented" ? (
+                  <div className="rented-badge" style={{ 
+                    padding: '1rem', 
+                    background: 'rgba(239, 68, 68, 0.1)', 
+                    color: 'var(--color-error)', 
+                    borderRadius: 'var(--radius-md)',
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    border: '1px solid var(--color-error)',
+                    marginBottom: '1rem'
+                  }}>
+                    <FaTimesCircle style={{ marginRight: '8px' }} /> This property is already rented
+                  </div>
                 ) : (
-                  <button disabled className="btn btn-primary btn-lg booking-card-btn" style={{ opacity: 0.6, cursor: "not-allowed" }} id="book-visit-btn" title="Only tenants can book visits"><FaCalendarAlt /> Book a Visit</button>
-                )}
-                {user?.role === "Tenant" ? (
-                  <Link to={`/apply-rental/${property.id}`} className="btn btn-secondary btn-lg booking-card-btn" id="apply-rental-btn"><FaFileSignature /> Apply for Rental</Link>
-                ) : (
-                  <button disabled className="btn btn-secondary btn-lg booking-card-btn" style={{ opacity: 0.6, cursor: "not-allowed" }} id="apply-rental-btn" title="Only tenants can apply for rentals"><FaFileSignature /> Apply for Rental</button>
+                  <>
+                    {user?.role === "Tenant" ? (
+                      <Link to={`/book-visit/${property.id}`} className="btn btn-primary btn-lg booking-card-btn" id="book-visit-btn"><FaCalendarAlt /> Book a Visit</Link>
+                    ) : (
+                      <button disabled className="btn btn-primary btn-lg booking-card-btn" style={{ opacity: 0.6, cursor: "not-allowed" }} id="book-visit-btn" title="Only tenants can book visits"><FaCalendarAlt /> Book a Visit</button>
+                    )}
+                    {user?.role === "Tenant" ? (
+                      <Link to={`/apply-rental/${property.id}`} className="btn btn-secondary btn-lg booking-card-btn" id="apply-rental-btn"><FaFileSignature /> Apply for Rental</Link>
+                    ) : (
+                      <button disabled className="btn btn-secondary btn-lg booking-card-btn" style={{ opacity: 0.6, cursor: "not-allowed" }} id="apply-rental-btn" title="Only tenants can apply for rentals"><FaFileSignature /> Apply for Rental</button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

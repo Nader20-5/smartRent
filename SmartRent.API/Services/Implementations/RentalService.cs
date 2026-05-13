@@ -124,6 +124,7 @@ namespace SmartRent.API.Services.Implementations
                 }
 
                 application.Status = "Approved";
+                application.Property.RentalStatus = "Rented";
                 application.UpdatedAt = DateTime.UtcNow;
                 await RejectOverlappingPendingApplicationsAsync(application);
                 await _unitOfWork.SaveChangesAsync();
