@@ -14,6 +14,8 @@ namespace SmartRent.API.DTOs.Rental
         public DateTime? LeaseEndDate { get; set; }
         public string? RejectionReason { get; set; }
 
+        public string? PropertyLocation { get; set; }
+        public string? PropertyImageUrl { get; set; }
         public List<string> DocumentUrls { get; set; } = new();
         public DateTime CreatedAt { get; set; }
     }

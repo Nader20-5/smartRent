@@ -1,30 +1,37 @@
 using Microsoft.EntityFrameworkCore;
-using SmartRent.API.Data;
 using SmartRent.API.DTOs.Common;
 using SmartRent.API.DTOs.Review;
 using SmartRent.API.Models;
+using SmartRent.API.Repositories.Interfaces;
 using SmartRent.API.Services.Interfaces;
 
 namespace SmartRent.API.Services.Implementations
 {
     public class ReviewService : IReviewService
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly INotificationService _notificationService;
 
-        public ReviewService(AppDbContext context)
+        public ReviewService(IUnitOfWork unitOfWork, INotificationService notificationService)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
         }
 
         public async Task<ServiceResult<ReviewResponseDto>> CreateAsync(int tenantId, CreateReviewDto dto)
         {
             try
             {
-                var propertyExists = await _context.Properties.AnyAsync(p => p.Id == dto.PropertyId);
-                if (!propertyExists)
+                var property = await _unitOfWork.Properties.Query()
+                    .Include(p => p.Landlord)
+                    .FirstOrDefaultAsync(p => p.Id == dto.PropertyId);
+
+                if (property == null)
                     return ServiceResult<ReviewResponseDto>.FailureResult("Property not found.");
 
-                var existingReview = await _context.Reviews
+                var tenant = await _unitOfWork.Users.GetByIdAsync(tenantId);
+
+                var existingReview = await _unitOfWork.Reviews
                     .AnyAsync(r => r.TenantId == tenantId && r.PropertyId == dto.PropertyId);
                 if (existingReview)
                     return ServiceResult<ReviewResponseDto>.FailureResult("You have already reviewed this property.");
@@ -38,8 +45,21 @@ namespace SmartRent.API.Services.Implementations
                     CreatedAt  = DateTime.UtcNow
                 };
 
-                _context.Reviews.Add(review);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Reviews.AddAsync(review);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Notify Landlord about the new review
+                try
+                {
+                    await _notificationService.CreateAsync(
+                        property.LandlordId,
+                        "New Review Received",
+                        $"{tenant?.FullName ?? "A tenant"} left a {dto.Rating}-star review on your property '{property.Title}'.",
+                        "NewReview",
+                        $"/properties/{property.Id}" // Link to property detail page
+                    );
+                }
+                catch { /* Non-blocking */ }
 
                 var responseDto = await MapToResponseDtoAsync(review.Id);
                 return ServiceResult<ReviewResponseDto>.SuccessResult(responseDto!, "Review submitted successfully.");
@@ -54,7 +74,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var reviews = await _context.Reviews
+                var reviews = await _unitOfWork.Reviews.Query()
                     .Include(r => r.Tenant)
                     .Where(r => r.PropertyId == propertyId)
                     .OrderByDescending(r => r.CreatedAt)
@@ -84,7 +104,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var review = await _context.Reviews.FirstOrDefaultAsync(r => r.Id == reviewId);
+                var review = await _unitOfWork.Reviews.FirstOrDefaultAsync(r => r.Id == reviewId);
                 if (review == null)
                     return ServiceResult<object>.FailureResult("Review not found.");
                 if (review.TenantId != tenantId)
@@ -92,7 +112,7 @@ namespace SmartRent.API.Services.Implementations
 
                 review.Rating  = rating;
                 review.Comment = comment?.Trim();
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 var responseDto = await MapToResponseDtoAsync(review.Id);
                 return ServiceResult<object>.SuccessResult(responseDto!, "Review updated successfully.");
@@ -107,14 +127,14 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var review = await _context.Reviews.FirstOrDefaultAsync(r => r.Id == reviewId);
+                var review = await _unitOfWork.Reviews.FirstOrDefaultAsync(r => r.Id == reviewId);
                 if (review == null)
                     return ServiceResult<bool>.FailureResult("Review not found.");
                 if (review.TenantId != tenantId)
                     return ServiceResult<bool>.FailureResult("Unauthorized: You did not write this review.");
 
-                _context.Reviews.Remove(review);
-                await _context.SaveChangesAsync();
+                _unitOfWork.Reviews.Remove(review);
+                await _unitOfWork.SaveChangesAsync();
                 return ServiceResult<bool>.SuccessResult(true, "Review deleted successfully.");
             }
             catch (Exception ex)
@@ -150,7 +170,9 @@ namespace SmartRent.API.Services.Implementations
 
         private async Task<ReviewResponseDto?> MapToResponseDtoAsync(int reviewId)
         {
-            var r = await _context.Reviews.Include(r => r.Tenant).FirstOrDefaultAsync(r => r.Id == reviewId);
+            var r = await _unitOfWork.Reviews.Query()
+                .Include(r => r.Tenant)
+                .FirstOrDefaultAsync(r => r.Id == reviewId);
             if (r == null) return null;
 
             return new ReviewResponseDto

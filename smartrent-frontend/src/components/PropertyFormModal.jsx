@@ -15,6 +15,10 @@ import {
   FaTimes,
   FaTrashAlt,
   FaCheckCircle,
+  FaBed,
+  FaBath,
+  FaRulerCombined,
+  FaLayerGroup,
 } from "react-icons/fa";
 import { MdElevator } from "react-icons/md";
 import { createProperty } from "../services/propertyService";
@@ -48,6 +52,10 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     propertyType: "",
     price: "",
     location: "",
+    bedrooms: "",
+    baths: "",
+    area: "",
+    floor: "",
     amenities: {
       hasParking: false,
       hasElevator: false,
@@ -61,7 +69,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
   const [isDragActive, setIsDragActive] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Populate form when editing
   useEffect(() => {
     if (property) {
       setFormData({
@@ -70,6 +77,10 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
         propertyType: property.propertyType || "",
         price: String(property.price || ""),
         location: property.location || "",
+        bedrooms: String(property.bedrooms || ""),
+        baths: String(property.baths || ""),
+        area: String(property.area || ""),
+        floor: property.floor != null ? String(property.floor) : "",
         amenities: { ...property.amenities },
       });
       setExistingImages(property.images || []);
@@ -80,6 +91,10 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
         propertyType: "",
         price: "",
         location: "",
+        bedrooms: "",
+        baths: "",
+        area: "",
+        floor: "",
         amenities: {
           hasParking: false,
           hasElevator: false,
@@ -93,7 +108,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     setErrors({});
   }, [property, isOpen]);
 
-  // Close on Escape key
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") onClose();
@@ -108,7 +122,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     };
   }, [isOpen, onClose]);
 
-  // Click outside to close
+  // Handles modal closing on backdrop click
   const handleBackdropClick = (e) => {
     if (e.target === modalRef.current) {
       onClose();
@@ -117,6 +131,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
 
   if (!isOpen) return null;
 
+  // Updates form state on input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -125,6 +140,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     }
   };
 
+  // Updates selected property type state
   const handleTypeSelect = (type) => {
     setFormData((prev) => ({ ...prev, propertyType: type }));
     if (errors.propertyType) {
@@ -132,6 +148,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     }
   };
 
+  // Toggles specific property amenity state
   const handleAmenityToggle = (key) => {
     setFormData((prev) => ({
       ...prev,
@@ -139,6 +156,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     }));
   };
 
+  // Processes and validates uploaded image files
   const processFiles = (files) => {
     const validFiles = Array.from(files).filter((f) =>
       f.type.startsWith("image/")
@@ -151,6 +169,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     setNewImageFiles((prev) => [...prev, ...newImages]);
   };
 
+  // Handles image drag over event state
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragActive(true);
@@ -161,12 +180,14 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     setIsDragActive(false);
   };
 
+  // Processes images dropped into zone
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragActive(false);
     if (e.dataTransfer.files?.length > 0) processFiles(e.dataTransfer.files);
   };
 
+  // Processes images from file input field
   const handleFileInputChange = (e) => {
     if (e.target.files?.length > 0) {
       processFiles(e.target.files);
@@ -174,10 +195,12 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     }
   };
 
+  // Removes previously uploaded property image
   const removeExistingImage = (id) => {
     setExistingImages((prev) => prev.filter((img) => img.id !== id));
   };
 
+  // Removes newly selected property image
   const removeNewImage = (id) => {
     setNewImageFiles((prev) => {
       const target = prev.find((img) => img.id === id);
@@ -186,6 +209,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     });
   };
 
+  // Validates required property form fields
   const validate = () => {
     const errs = {};
     if (!formData.title.trim()) errs.title = "Title is required";
@@ -194,10 +218,14 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     if (!formData.price || Number(formData.price) <= 0)
       errs.price = "Enter a valid price";
     if (!formData.location.trim()) errs.location = "Location is required";
+    if (!formData.bedrooms || Number(formData.bedrooms) < 0) errs.bedrooms = "Required";
+    if (!formData.baths || Number(formData.baths) < 0) errs.baths = "Required";
+    if (!formData.area || Number(formData.area) <= 0) errs.area = "Required";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  // Submits property data to backend service
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -207,13 +235,16 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
     setSuccessMsg("");
 
     try {
-      // Build FormData for multipart/form-data
       const fd = new FormData();
       fd.append("Title", formData.title);
       fd.append("Description", formData.description);
       fd.append("PropertyType", formData.propertyType);
       fd.append("Price", Number(formData.price));
       fd.append("Location", formData.location);
+      fd.append("Bedrooms", Number(formData.bedrooms));
+      fd.append("Baths", Number(formData.baths));
+      fd.append("Area", Number(formData.area));
+      if (formData.floor !== "") fd.append("Floor", Number(formData.floor));
       fd.append("HasParking", formData.amenities.hasParking);
       fd.append("HasElevator", formData.amenities.hasElevator);
       fd.append("IsFurnished", formData.amenities.isFurnished);
@@ -226,7 +257,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
       await createProperty(fd);
       setSuccessMsg("Property submitted successfully! Please wait for admin approval.");
 
-      // Notify parent to refresh + close after delay
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
@@ -250,7 +280,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
       <div
         className={`modal-container modal-lg ${isOpen ? "modal-enter" : ""}`}
       >
-        {/* ── Modal Header ── */}
         <div className="modal-header">
           <div>
             <h2 className="modal-title">
@@ -271,9 +300,7 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
           </button>
         </div>
 
-        {/* ── Modal Body ── */}
         <form className="modal-body" onSubmit={handleSubmit}>
-          {/* Section: Basic Info */}
           <div className="modal-form-section">
             <h3 className="modal-form-section-title">Basic Information</h3>
             <div className="form-group">
@@ -306,7 +333,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
             </div>
           </div>
 
-          {/* Section: Property Type */}
           <div className="modal-form-section">
             <h3 className="modal-form-section-title">Property Type</h3>
             {errors.propertyType && (
@@ -329,7 +355,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
             </div>
           </div>
 
-          {/* Section: Price & Location */}
           <div className="modal-form-section">
             <h3 className="modal-form-section-title">Price & Location</h3>
             <div className="form-row">
@@ -365,7 +390,62 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
             </div>
           </div>
 
-          {/* Section: Amenities */}
+          <div className="modal-form-section">
+            <h3 className="modal-form-section-title">Property Details</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label"><FaBed style={{marginRight: 6}} /> Bedrooms</label>
+                <input
+                  type="number"
+                  name="bedrooms"
+                  className={`form-input ${errors.bedrooms ? "is-error" : ""}`}
+                  placeholder="e.g. 3"
+                  min="0"
+                  value={formData.bedrooms}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label"><FaBath style={{marginRight: 6}} /> Bathrooms</label>
+                <input
+                  type="number"
+                  name="baths"
+                  className={`form-input ${errors.baths ? "is-error" : ""}`}
+                  placeholder="e.g. 2"
+                  min="0"
+                  value={formData.baths}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label"><FaRulerCombined style={{marginRight: 6}} /> Area (sq ft)</label>
+                <input
+                  type="number"
+                  name="area"
+                  className={`form-input ${errors.area ? "is-error" : ""}`}
+                  placeholder="e.g. 1200"
+                  min="1"
+                  value={formData.area}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label"><FaLayerGroup style={{marginRight: 6}} /> Floor (optional)</label>
+                <input
+                  type="number"
+                  name="floor"
+                  className="form-input"
+                  placeholder="e.g. 5"
+                  min="0"
+                  value={formData.floor}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="modal-form-section">
             <h3 className="modal-form-section-title">Amenities</h3>
             <div className="amenity-toggles-grid">
@@ -391,7 +471,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
             </div>
           </div>
 
-          {/* Section: Images */}
           <div className="modal-form-section">
             <h3 className="modal-form-section-title">Property Images</h3>
 
@@ -470,7 +549,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
             )}
           </div>
 
-          {/* ── Feedback Messages ── */}
           {successMsg && (
             <div style={{
               padding: "14px 20px", borderRadius: "12px", margin: "0 24px 8px",
@@ -494,7 +572,6 @@ const PropertyFormModal = ({ isOpen, onClose, property = null, onSuccess }) => {
             </div>
           )}
 
-          {/* ── Modal Footer ── */}
           <div className="modal-footer">
             <button
               type="button"

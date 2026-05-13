@@ -1,8 +1,6 @@
 import api from "./api";
 
-// ==========================================
-// Visits Section
-// ==========================================
+// Manage property visit requests
 
 export const createVisit = async (data) => {
   const response = await api.post("/visit", data);

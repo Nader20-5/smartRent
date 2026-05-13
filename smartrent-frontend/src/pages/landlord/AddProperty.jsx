@@ -13,6 +13,10 @@ import {
   FaPaperPlane,
   FaImage,
   FaCheckCircle,
+  FaBed,
+  FaBath,
+  FaRulerCombined,
+  FaLayerGroup,
 } from "react-icons/fa";
 import { createProperty } from "../../services/propertyService";
 import { MdElevator } from "react-icons/md";
@@ -43,6 +47,10 @@ const AddProperty = () => {
     propertyType: "",
     price: "",
     location: "",
+    bedrooms: "",
+    baths: "",
+    area: "",
+    floor: "",
     amenities: {
       hasParking: false,
       hasElevator: false,
@@ -134,6 +142,10 @@ const AddProperty = () => {
       fd.append("PropertyType", formData.propertyType);
       fd.append("Price", Number(formData.price));
       fd.append("Location", formData.location);
+      fd.append("Bedrooms", Number(formData.bedrooms) || 0);
+      fd.append("Baths", Number(formData.baths) || 0);
+      fd.append("Area", Number(formData.area) || 0);
+      if (formData.floor !== "") fd.append("Floor", Number(formData.floor));
       fd.append("HasParking", formData.amenities.hasParking);
       fd.append("HasElevator", formData.amenities.hasElevator);
       fd.append("IsFurnished", formData.amenities.isFurnished);
@@ -267,6 +279,80 @@ const AddProperty = () => {
                       value={formData.location}
                       onChange={handleInputChange}
                       required
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ══════ Section: Property Details ══════ */}
+            <section className="form-section">
+              <h2 className="form-section-title">Property Details</h2>
+              <div className="form-section-body">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="property-bedrooms">
+                      <FaBed style={{ marginRight: 6 }} /> Bedrooms
+                    </label>
+                    <input
+                      type="number"
+                      id="property-bedrooms"
+                      name="bedrooms"
+                      className="form-input"
+                      placeholder="e.g. 3"
+                      min="0"
+                      value={formData.bedrooms}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="property-baths">
+                      <FaBath style={{ marginRight: 6 }} /> Bathrooms
+                    </label>
+                    <input
+                      type="number"
+                      id="property-baths"
+                      name="baths"
+                      className="form-input"
+                      placeholder="e.g. 2"
+                      min="0"
+                      value={formData.baths}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="property-area">
+                      <FaRulerCombined style={{ marginRight: 6 }} /> Area (sq ft)
+                    </label>
+                    <input
+                      type="number"
+                      id="property-area"
+                      name="area"
+                      className="form-input"
+                      placeholder="e.g. 1200"
+                      min="1"
+                      value={formData.area}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="property-floor">
+                      <FaLayerGroup style={{ marginRight: 6 }} /> Floor (optional)
+                    </label>
+                    <input
+                      type="number"
+                      id="property-floor"
+                      name="floor"
+                      className="form-input"
+                      placeholder="e.g. 5"
+                      min="0"
+                      value={formData.floor}
+                      onChange={handleInputChange}
                     />
                   </div>
                 </div>

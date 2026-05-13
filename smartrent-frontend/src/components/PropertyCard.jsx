@@ -10,6 +10,9 @@ import {
   FaStar,
   FaEdit,
   FaTrashAlt,
+  FaBed,
+  FaBath,
+  FaRulerCombined,
 } from "react-icons/fa";
 import { MdElevator } from "react-icons/md";
 
@@ -22,6 +25,7 @@ const AMENITY_CONFIG = [
 
 
 
+// Formats property price with currency
 const formatPrice = (price) => {
   return `$${price.toLocaleString("en-US", {
     minimumFractionDigits: 0,
@@ -46,6 +50,7 @@ const PropertyCard = ({
     (a) => property.amenities?.[a.key]
   );
 
+  // Toggles property favorite status
   const handleFavoriteClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -53,6 +58,7 @@ const PropertyCard = ({
     onFavoriteToggle?.(property.id, !isFav);
   };
 
+  // Initiates property edit workflow
   const handleEdit = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -63,6 +69,7 @@ const PropertyCard = ({
     }
   };
 
+  // Initiates property deletion workflow
   const handleDelete = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -82,7 +89,6 @@ const PropertyCard = ({
       className={`property-card ${isAnimate ? "animate-in" : ""}`}
       id={`property-card-${property.id}`}
     >
-      {/* ── Image Section ── */}
       <div className="property-card-image-wrapper">
         <img
           src={mainImage?.imageUrl}
@@ -91,12 +97,9 @@ const PropertyCard = ({
           loading="lazy"
         />
 
-        {/* Gradient overlay for text readability */}
         <div className="property-card-image-overlay" />
 
-        {/* Premium Top Tags */}
         <div className="property-card-tags">
-          {/* Rental Status */}
           <span
             className={`property-card-tag ${
               property.rentalStatus === "Available" ? "tag-success" : "tag-info"
@@ -106,7 +109,6 @@ const PropertyCard = ({
             {property.rentalStatus}
           </span>
 
-          {/* Admin Approval Status */}
           {variant === "landlord" && (
             <span
               className={`property-card-tag ${
@@ -126,7 +128,6 @@ const PropertyCard = ({
           )}
         </div>
 
-        {/* Tenant: heart button */}
         {variant === "tenant" && (
           <button
             className={`property-card-favorite ${isFav ? "is-active" : ""}`}
@@ -138,7 +139,6 @@ const PropertyCard = ({
           </button>
         )}
 
-        {/* Rating overlay */}
         {property.rating && (
           <div className="property-card-rating">
             <FaStar className="property-card-star-icon" />
@@ -147,7 +147,6 @@ const PropertyCard = ({
         )}
       </div>
 
-      {/* ── Content Section ── */}
       <div className="property-card-content">
         <div className="property-card-header">
           <h3 className="property-card-title">{property.title}</h3>
@@ -161,7 +160,12 @@ const PropertyCard = ({
           <span>{property.location}</span>
         </p>
 
-        {/* Amenity row — only render amenities with value true */}
+        <div className="property-card-stats" style={{ display: 'flex', gap: '12px', margin: '10px 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaBed /> {property.bedrooms}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaBath /> {property.baths}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaRulerCombined /> {property.area} sqft</span>
+        </div>
+
         {activeAmenities.length > 0 && (
           <div className="property-card-amenities">
             {activeAmenities.map(({ key, label, icon: Icon }) => (
@@ -173,10 +177,8 @@ const PropertyCard = ({
           </div>
         )}
 
-        {/* Landlord variant: action buttons only. Status handled overhead. */}
         {variant === "landlord" && (
           <div className="property-card-actions">
-            <div></div> {/* spacer to push buttons right */}
             <div className="property-card-action-buttons">
               <button
                 className="property-card-action-btn action-edit"

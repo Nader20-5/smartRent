@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createRentalApplication } from '../../services/rentalService';
+import { getPropertyById } from '../../services/propertyService';
 import { toast } from 'react-toastify';
 import {
   FaFileSignature,
@@ -10,12 +11,14 @@ import {
   FaCloudUploadAlt,
   FaChevronLeft,
   FaCheckCircle,
+  FaExclamationTriangle,
 } from 'react-icons/fa';
 
 const ApplyRental = () => {
   const { propertyId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [property, setProperty] = useState(null);
   const [formData, setFormData] = useState({
     proposedRent: '',
     moveInDate: '',
@@ -24,14 +27,58 @@ const ApplyRental = () => {
     documents: null,
   });
 
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        const data = await getPropertyById(propertyId);
+        setProperty(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProperty();
+  }, [propertyId]);
+
   // Get tomorrow as minimum selectable date
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = tomorrow.toISOString().split('T')[0];
 
+  const isRangeOccupied = (startStr, endStr) => {
+    if (!property || !property.occupiedRanges || !startStr) return false;
+    const selectedStart = new Date(startStr);
+    const selectedEnd = endStr ? new Date(endStr) : null;
+
+    return property.occupiedRanges.some(range => {
+      const occupiedStart = new Date(range.startDate);
+      const occupiedEnd = range.endDate ? new Date(range.endDate) : null;
+
+      if (!occupiedEnd) {
+        // If existing occupancy is indefinite
+        if (!selectedEnd) return selectedStart >= occupiedStart;
+        return selectedEnd >= occupiedStart;
+      }
+
+      // Check for overlap: (StartA <= EndB) and (EndA >= StartB)
+      if (selectedEnd) {
+        return selectedStart <= occupiedEnd && selectedEnd >= occupiedStart;
+      } else {
+        // If user hasn't picked an end date yet, just check if move-in is inside an occupied range
+        return selectedStart <= occupiedEnd && selectedStart >= occupiedStart;
+      }
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    if (name === 'moveInDate' && isRangeOccupied(value, formData.leaseEndDate)) {
+      toast.warning("The selected move-in date is within an already rented period.");
+    }
+    if (name === 'leaseEndDate' && isRangeOccupied(formData.moveInDate, value)) {
+      toast.warning("The selected lease period overlaps with an existing rental.");
+    }
   };
 
   const handleFileChange = (e) => {
@@ -40,6 +87,12 @@ const ApplyRental = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate date overlaps
+    if (isRangeOccupied(formData.moveInDate, formData.leaseEndDate)) {
+      toast.error('The selected period overlaps with an existing rental. Please choose different dates.');
+      return;
+    }
 
     // Validate date range
     if (formData.moveInDate && formData.leaseEndDate) {
@@ -58,7 +111,6 @@ const ApplyRental = () => {
     data.append('LeaseEndDate', formData.leaseEndDate);
     data.append('CoverLetter', formData.coverLetter);
 
-    // Append files with the correct key for List<IFormFile>
     if (formData.documents) {
       for (let i = 0; i < formData.documents.length; i++) {
         data.append('Documents', formData.documents[i]);
@@ -111,10 +163,40 @@ const ApplyRental = () => {
                 Rental Application
               </h1>
             </div>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-              Complete the form below to apply for Property <strong>#{propertyId}</strong>
-            </p>
+            {property && (
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                Applying for: <strong>{property.title}</strong>
+              </p>
+            )}
           </div>
+
+          {/* Availability Alert */}
+          {property && property.occupiedRanges && property.occupiedRanges.length > 0 && (
+            <div style={{
+              background: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1rem',
+              marginBottom: '2rem',
+              display: 'flex',
+              gap: 12
+            }}>
+              <FaExclamationTriangle style={{ color: '#f59e0b', fontSize: '1.2rem', marginTop: 2 }} />
+              <div>
+                <h4 style={{ color: '#92400e', fontSize: '14px', fontWeight: 700, marginBottom: 4 }}>Note on Availability</h4>
+                <p style={{ color: '#92400e', fontSize: '13px', lineHeight: 1.5 }}>
+                  This property is currently occupied during the following periods:
+                  <ul style={{ marginTop: 8, paddingLeft: 16 }}>
+                    {property.occupiedRanges.map((range, idx) => (
+                      <li key={idx}>
+                        {new Date(range.startDate).toLocaleDateString()} to {range.endDate ? new Date(range.endDate).toLocaleDateString() : 'Indefinite'}
+                      </li>
+                    ))}
+                  </ul>
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
             {/* Date Range Row */}
@@ -127,13 +209,18 @@ const ApplyRental = () => {
                 <input
                   type="date"
                   name="moveInDate"
-                  className="form-input"
+                  className={`form-input ${isRangeOccupied(formData.moveInDate, formData.leaseEndDate) ? 'is-error' : ''}`}
                   required
                   min={minDate}
                   value={formData.moveInDate}
                   onChange={handleChange}
                   id="input-move-in-date"
                 />
+                {isRangeOccupied(formData.moveInDate, formData.leaseEndDate) && (
+                  <span className="form-error-text" style={{ color: '#ef4444', fontSize: '12px', marginTop: 4 }}>
+                    This period overlaps with an existing rental.
+                  </span>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">
@@ -163,7 +250,7 @@ const ApplyRental = () => {
                 type="number"
                 name="proposedRent"
                 className="form-input"
-                placeholder="e.g. 5000"
+                placeholder={property ? `Listing price: $${property.price}` : "e.g. 5000"}
                 required
                 min="1"
                 value={formData.proposedRent}
@@ -232,7 +319,7 @@ const ApplyRental = () => {
             <button
               type="submit"
               className="btn btn-primary btn-lg"
-              disabled={loading}
+              disabled={loading || isRangeOccupied(formData.moveInDate, formData.leaseEndDate)}
               style={{ width: '100%', justifyContent: 'center', marginTop: 'var(--space-2)' }}
               id="submit-rental-btn"
             >

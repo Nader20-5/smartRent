@@ -10,5 +10,6 @@ namespace SmartRent.API.DTOs.Review
         public int Rating { get; set; }
         public string? Comment { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? PropertyTitle { get; set; }
     }
 }

@@ -161,7 +161,9 @@ const VisitRequests = () => {
                       </td>
                       <td>
                         <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{req.propertyTitle || req.propertyName}</div>
-                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-primary-light)', fontWeight: 700 }}>ID: #{req.propertyId}</div>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <FaMapMarkerAlt style={{ fontSize: 10 }} /> {req.propertyLocation || 'Location N/A'}
+                        </div>
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

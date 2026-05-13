@@ -47,6 +47,11 @@ export const AuthProvider = ({ children }) => {
     window.location.href = "/login";
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+  };
+
   const isAuthenticated = !!token;
 
   const hasRole = (role) => {
@@ -60,6 +65,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     logout,
+    updateUser,
     hasRole,
   };
 

@@ -1,42 +1,42 @@
 using Microsoft.EntityFrameworkCore;
-using SmartRent.API.Data;
 using SmartRent.API.DTOs.Common;
 using SmartRent.API.DTOs.Property;
 using SmartRent.API.Models;
+using SmartRent.API.Repositories.Interfaces;
 using SmartRent.API.Services.Interfaces;
 
 namespace SmartRent.API.Services.Implementations
 {
     public class FavoriteService : IFavoriteService
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public FavoriteService(AppDbContext context)
+        public FavoriteService(IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<ServiceResult<bool>> AddFavoriteAsync(int userId, int propertyId)
         {
             try
             {
-                var propertyExists = await _context.Properties.AnyAsync(p => p.Id == propertyId);
+                var propertyExists = await _unitOfWork.Properties.AnyAsync(p => p.Id == propertyId);
                 if (!propertyExists)
                     return ServiceResult<bool>.FailureResult("Property not found.");
 
-                var alreadyFavorited = await _context.Favorites
+                var alreadyFavorited = await _unitOfWork.Favorites
                     .AnyAsync(f => f.UserId == userId && f.PropertyId == propertyId);
 
                 if (alreadyFavorited)
                     return ServiceResult<bool>.FailureResult("Property is already in your favorites.");
 
-                _context.Favorites.Add(new Favorite
+                await _unitOfWork.Favorites.AddAsync(new Favorite
                 {
                     UserId = userId,
                     PropertyId = propertyId,
                     CreatedAt = DateTime.UtcNow
                 });
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 return ServiceResult<bool>.SuccessResult(true, "Property added to favorites.");
             }
@@ -50,14 +50,14 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var favorite = await _context.Favorites
+                var favorite = await _unitOfWork.Favorites
                     .FirstOrDefaultAsync(f => f.UserId == userId && f.PropertyId == propertyId);
 
                 if (favorite == null)
                     return ServiceResult<bool>.FailureResult("Property is not in your favorites.");
 
-                _context.Favorites.Remove(favorite);
-                await _context.SaveChangesAsync();
+                _unitOfWork.Favorites.Remove(favorite);
+                await _unitOfWork.SaveChangesAsync();
 
                 return ServiceResult<bool>.SuccessResult(true, "Property removed from favorites.");
             }
@@ -71,7 +71,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var favoritePropertyIds = await _context.Favorites
+                var favoritePropertyIds = await _unitOfWork.Favorites.Query()
                     .Where(f => f.UserId == userId)
                     .OrderByDescending(f => f.CreatedAt)
                     .Select(f => f.PropertyId)
@@ -81,7 +81,7 @@ namespace SmartRent.API.Services.Implementations
 
                 foreach (var propertyId in favoritePropertyIds)
                 {
-                    var property = await _context.Properties
+                    var property = await _unitOfWork.Properties.Query()
                         .Include(p => p.Landlord)
                         .Include(p => p.Images)
                         .Include(p => p.Amenity)
@@ -105,7 +105,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var favorited = await _context.Favorites
+                var favorited = await _unitOfWork.Favorites
                     .AnyAsync(f => f.UserId == userId && f.PropertyId == propertyId);
                 return ServiceResult<bool>.SuccessResult(favorited);
             }
@@ -117,7 +117,7 @@ namespace SmartRent.API.Services.Implementations
 
         public async Task<ServiceResult<bool>> ToggleFavoriteAsync(int userId, int propertyId)
         {
-            var isFavorited = await _context.Favorites
+            var isFavorited = await _unitOfWork.Favorites
                 .AnyAsync(f => f.UserId == userId && f.PropertyId == propertyId);
             return isFavorited
                 ? await RemoveFavoriteAsync(userId, propertyId)

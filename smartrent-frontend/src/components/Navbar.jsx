@@ -67,6 +67,16 @@ const Navbar = () => {
           >
             Browse
           </NavLink>
+          {isAuthenticated && user?.role === ROLES.TENANT && (
+            <NavLink
+              to="/my-journey"
+              className={({ isActive }) =>
+                `navbar-link ${isActive ? "is-active" : ""}`
+              }
+            >
+              <FaChartLine className="navbar-link-icon" /> My Journey
+            </NavLink>
+          )}
           {isAuthenticated && (
             <NavLink
               to="/favorites"
@@ -120,11 +130,17 @@ const Navbar = () => {
               {/* Placement of the Notification Bell */}
               {token && <NotificationBell token={token} />} 
               
-              <div className="navbar-user-info">
-                <FaUserCircle className="navbar-user-avatar" />
-                <span className="navbar-user-name">{user?.fullName}</span>
-                <span className="navbar-user-role">{user?.role}</span>
-              </div>
+              <Link to="/profile" className="navbar-user-info">
+                {user?.profileImage ? (
+                  <img src={user.profileImage} alt="" className="navbar-user-avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--color-primary-light)' }} />
+                ) : (
+                  <FaUserCircle className="navbar-user-avatar" style={{ fontSize: '40px' }} />
+                )}
+                <div className="navbar-user-details">
+                  <span className="navbar-user-name">{user?.fullName}</span>
+                  <span className="navbar-user-role">{user?.role}</span>
+                </div>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="btn btn-secondary btn-sm navbar-logout-btn"

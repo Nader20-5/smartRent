@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.SignalR; 
 using Microsoft.EntityFrameworkCore;
-using SmartRent.API.Data;
 using SmartRent.API.DTOs.Common;
 using SmartRent.API.Hubs; 
 using SmartRent.API.Models;
+using SmartRent.API.Repositories.Interfaces;
 using SmartRent.API.Services.Interfaces;
 
 namespace SmartRent.API.Services.Implementations
@@ -11,12 +11,12 @@ namespace SmartRent.API.Services.Implementations
 
     public class NotificationService : INotificationService
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IHubContext<NotificationHub> _hubContext;
 
-        public NotificationService(AppDbContext context, IHubContext<NotificationHub> hubContext)
+        public NotificationService(IUnitOfWork unitOfWork, IHubContext<NotificationHub> hubContext)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _hubContext = hubContext;
         }
 
@@ -26,8 +26,8 @@ namespace SmartRent.API.Services.Implementations
             {
                 var notification = new Notification { UserId = userId, Title = title, Message = message, Type = type, Link = link, IsRead = false, CreatedAt = DateTime.UtcNow };
 
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Notifications.AddAsync(notification);
+                await _unitOfWork.SaveChangesAsync();
 
                 await _hubContext.Clients.Group(userId.ToString()).SendAsync("ReceiveNotification", new
                 {
@@ -51,7 +51,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var admins = await _context.Users
+                var admins = await _unitOfWork.Users.Query()
                     .Where(u => u.Role == "Admin" && u.IsActive)
                     .ToListAsync();
 
@@ -68,8 +68,8 @@ namespace SmartRent.API.Services.Implementations
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
 
-                _context.Notifications.AddRange(notifications);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Notifications.AddRangeAsync(notifications);
+                await _unitOfWork.SaveChangesAsync();
 
                 // Broadcast to admins group via SignalR
                 await _hubContext.Clients.Group("Role_Admin").SendAsync("ReceiveNotification", new
@@ -94,7 +94,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var query = _context.Notifications
+                var query = _unitOfWork.Notifications.Query()
                     .Where(n => n.UserId == userId)
                     .OrderByDescending(n => n.CreatedAt);
 
@@ -126,8 +126,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var notification = await _context.Notifications
-                    .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
+                var notification = await _unitOfWork.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
 
                 if (notification == null)
                 {
@@ -140,7 +139,7 @@ namespace SmartRent.API.Services.Implementations
                 }
 
                 notification.IsRead = true;
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 return ServiceResult<bool>.SuccessResult(true);
             }
@@ -154,10 +153,16 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                await _context.Notifications
+                var unreadNotifications = await _unitOfWork.Notifications.Query()
                     .Where(n => n.UserId == userId && !n.IsRead)
-                    .ExecuteUpdateAsync(setters => setters
-                        .SetProperty(n => n.IsRead, true));
+                    .ToListAsync();
+
+                foreach (var notification in unreadNotifications)
+                {
+                    notification.IsRead = true;
+                }
+
+                await _unitOfWork.SaveChangesAsync();
 
                 return ServiceResult<bool>.SuccessResult(true);
             }
@@ -171,8 +176,7 @@ namespace SmartRent.API.Services.Implementations
         {
             try
             {
-                var count = await _context.Notifications
-                    .CountAsync(n => n.UserId == userId && !n.IsRead);
+                var count = await _unitOfWork.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
 
                 return ServiceResult<int>.SuccessResult(count);
             }

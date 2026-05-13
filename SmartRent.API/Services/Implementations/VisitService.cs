@@ -1,10 +1,9 @@
-﻿using SmartRent.API.Data;
 using SmartRent.API.DTOs.Common;
 using SmartRent.API.DTOs.Visit;
 using SmartRent.API.Models;
+using SmartRent.API.Repositories.Interfaces;
 using SmartRent.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace SmartRent.API.Services.Implementations
 {
@@ -18,28 +17,33 @@ namespace SmartRent.API.Services.Implementations
 
     public class VisitService : IVisitService
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
 
-        public VisitService(AppDbContext context, INotificationService notificationService)
+        public VisitService(IUnitOfWork unitOfWork, INotificationService notificationService)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _notificationService = notificationService;
         }
 
+        // Maps visit request to DTO
         private static VisitResponseDto MapToDto(VisitRequest v) => new()
         {
             Id = v.Id,
             PropertyId = v.PropertyId,
             PropertyTitle = v.Property?.Title ?? string.Empty,
+            PropertyLocation = v.Property?.Location ?? string.Empty,
             TenantId = v.TenantId,
             TenantName = v.Tenant?.Email ?? string.Empty,
             RequestedDate = v.RequestedDate,
             Status = v.Status,
             Message = v.Message,
+            PropertyImageUrl = v.Property?.Images?.FirstOrDefault(i => i.IsMain)?.ImageUrl 
+                              ?? v.Property?.Images?.FirstOrDefault()?.ImageUrl,
             CreatedAt = v.CreatedAt
         };
 
+        // Ensures valid pagination parameter values
         private static void NormalizePagination(PaginationDto pagination)
         {
             if (pagination.PageNumber < 1) pagination.PageNumber = 1;
@@ -47,6 +51,7 @@ namespace SmartRent.API.Services.Implementations
             if (pagination.PageSize > 100) pagination.PageSize = 100;
         }
 
+        // Creates a new visit request
         public async Task<ServiceResult<VisitResponseDto>> CreateAsync(int tenantId, CreateVisitDto dto)
         {
             try
@@ -61,10 +66,10 @@ namespace SmartRent.API.Services.Implementations
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _context.VisitRequests.Add(visitRequest);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.VisitRequests.AddAsync(visitRequest);
+                await _unitOfWork.SaveChangesAsync();
 
-                var property = await _context.Properties
+                var property = await _unitOfWork.Properties
                     .FirstOrDefaultAsync(p => p.Id == dto.PropertyId);
 
                 if (property != null)
@@ -86,11 +91,12 @@ namespace SmartRent.API.Services.Implementations
             }
         }
 
+        // Approves an existing visit request
         public async Task<ServiceResult<bool>> ApproveAsync(int landlordId, int visitId)
         {
             try
             {
-                var visit = await _context.VisitRequests
+                var visit = await _unitOfWork.VisitRequests.Query()
                     .Include(v => v.Property)
                     .FirstOrDefaultAsync(v => v.Id == visitId && v.Property.LandlordId == landlordId);
 
@@ -103,7 +109,7 @@ namespace SmartRent.API.Services.Implementations
                 visit.Status = VisitStatus.Approved;
                 visit.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 await _notificationService.CreateAsync(
                     visit.TenantId,
@@ -121,11 +127,12 @@ namespace SmartRent.API.Services.Implementations
             }
         }
 
+        // Rejects an existing visit request
         public async Task<ServiceResult<bool>> RejectAsync(int landlordId, int visitId, RejectDto dto)
         {
             try
             {
-                var visit = await _context.VisitRequests
+                var visit = await _unitOfWork.VisitRequests.Query()
                     .Include(v => v.Property)
                     .FirstOrDefaultAsync(v => v.Id == visitId && v.Property.LandlordId == landlordId);
 
@@ -139,7 +146,7 @@ namespace SmartRent.API.Services.Implementations
                 visit.LandlordNote = dto.Reason;
                 visit.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 await _notificationService.CreateAsync(
                     visit.TenantId,
@@ -158,11 +165,12 @@ namespace SmartRent.API.Services.Implementations
         }
 
 
+        // Cancels a pending visit request
         public async Task<ServiceResult<bool>> CancelAsync(int tenantId, int visitId)
         {
             try
             {
-                var visit = await _context.VisitRequests
+                var visit = await _unitOfWork.VisitRequests
                     .FirstOrDefaultAsync(v => v.Id == visitId && v.TenantId == tenantId);
 
                 if (visit == null)
@@ -174,7 +182,7 @@ namespace SmartRent.API.Services.Implementations
                 visit.Status = VisitStatus.Cancelled;
                 visit.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 return ServiceResult<bool>.SuccessResult(true);
             }
             catch (Exception ex)
@@ -183,14 +191,16 @@ namespace SmartRent.API.Services.Implementations
             }
         }
 
+        // Retrieves visit requests for tenant
         public async Task<ServiceResult<PagedResult<VisitResponseDto>>> GetByTenantAsync(int tenantId, PaginationDto pagination)
         {
             try
             {
                 NormalizePagination(pagination); 
 
-                var query = _context.VisitRequests
+                var query = _unitOfWork.VisitRequests.Query()
                     .Include(v => v.Property)
+                        .ThenInclude(p => p.Images)
                     .Where(v => v.TenantId == tenantId)
                     .OrderByDescending(v => v.CreatedAt);
 
@@ -218,14 +228,16 @@ namespace SmartRent.API.Services.Implementations
             }
         }
 
+        // Retrieves visit requests for landlord
         public async Task<ServiceResult<PagedResult<VisitResponseDto>>> GetByLandlordAsync(int landlordId, PaginationDto pagination)
         {
             try
             {
                 NormalizePagination(pagination); 
 
-                var query = _context.VisitRequests
+                var query = _unitOfWork.VisitRequests.Query()
                     .Include(v => v.Property)
+                        .ThenInclude(p => p.Images)
                     .Include(v => v.Tenant)
                     .Where(v => v.Property.LandlordId == landlordId)
                     .OrderByDescending(v => v.CreatedAt);

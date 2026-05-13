@@ -29,9 +29,9 @@ import Home from "./pages/tenant/Home";
 import PropertyDetails from "./pages/tenant/PropertyDetails";
 import BookVisit from "./pages/tenant/BookVisit";
 import ApplyRental from "./pages/tenant/ApplyRental";
-import MyVisits from "./pages/tenant/MyVisits";
-import MyApplications from "./pages/tenant/MyApplications";
+import MyJourney from "./pages/tenant/MyJourney";
 import Favorites from "./pages/tenant/Favorites";
+import Profile from "./pages/tenant/Profile";
 
 import { ROLES } from "./utils/constants";
 
@@ -127,18 +127,10 @@ function App() {
               }
             />
             <Route
-              path="/my-visits"
+              path="/my-journey"
               element={
                 <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
-                  <MyVisits />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/my-applications"
-              element={
-                <ProtectedRoute allowedRoles={[ROLES.TENANT]}>
-                  <MyApplications />
+                  <><MyJourney /><Footer /></>
                 </ProtectedRoute>
               }
             />
@@ -147,6 +139,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={[ROLES.TENANT, ROLES.LANDLORD, ROLES.ADMIN]}>
                   <><Favorites /><Footer /></>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.TENANT, ROLES.LANDLORD, ROLES.ADMIN]}>
+                  <><Profile /><Footer /></>
                 </ProtectedRoute>
               }
             />

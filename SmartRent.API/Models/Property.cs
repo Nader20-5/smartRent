@@ -23,6 +23,15 @@ namespace SmartRent.API.Models
         [MaxLength(200)]
         public string Location { get; set; } = string.Empty;
 
+        public int Bedrooms { get; set; }
+
+        public int Baths { get; set; }
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal Area { get; set; }
+
+        public int? Floor { get; set; }
+
         [Required]
         [MaxLength(50)]
         public string PropertyType { get; set; } = string.Empty; // Apartment, Villa, Studio, Office

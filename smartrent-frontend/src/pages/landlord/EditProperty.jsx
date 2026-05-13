@@ -14,9 +14,14 @@ import {
   FaImage,
   FaChevronLeft,
   FaTrashAlt,
+  FaBed,
+  FaBath,
+  FaRulerCombined,
+  FaLayerGroup,
+  FaCheckCircle,
 } from "react-icons/fa";
 import { MdElevator } from "react-icons/md";
-import { getPropertyById } from "../../services/propertyService";
+import { getPropertyById, updateProperty, uploadPropertyImages } from "../../services/propertyService";
 
 const PROPERTY_TYPES = [
   { value: "Apartment", label: "Apartment", icon: FaBuilding },
@@ -40,6 +45,8 @@ const EditProperty = () => {
   const [property, setProperty] = useState(null);
   const [formData, setFormData] = useState(null);
   const [existingImages, setExistingImages] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMsg, setSubmitMsg] = useState(null);
   
   React.useEffect(() => {
     const fetchProp = async () => {
@@ -52,6 +59,10 @@ const EditProperty = () => {
           propertyType: data.propertyType || "Apartment",
           price: String(data.price || 0),
           location: data.location || "",
+          bedrooms: String(data.bedrooms || 0),
+          baths: String(data.baths || 0),
+          area: String(data.area || 0),
+          floor: data.floor != null ? String(data.floor) : "",
           amenities: data.amenities || { hasParking: false, hasElevator: false, isFurnished: false, hasPool: false },
         });
         setExistingImages(data.images || []);
@@ -156,18 +167,47 @@ const EditProperty = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = {
-      id: property.id,
-      ...formData,
-      price: Number(formData.price),
-      existingImageIds: existingImages.map((img) => img.id),
-      newImages: newImageFiles.map((img) => img.file),
-    };
-    console.log("Updating property:", payload);
-    // Future: PUT to API via Axios
-    navigate("/landlord/properties");
+    setSubmitting(true);
+    setSubmitMsg(null);
+
+    try {
+      // Backend expects JSON body for PUT /api/property/{id}
+      const updateData = {
+        title: formData.title,
+        description: formData.description,
+        propertyType: formData.propertyType,
+        price: Number(formData.price),
+        location: formData.location,
+        bedrooms: Number(formData.bedrooms),
+        baths: Number(formData.baths),
+        area: Number(formData.area),
+        floor: formData.floor !== "" ? Number(formData.floor) : null,
+        hasParking: formData.amenities.hasParking,
+        hasElevator: formData.amenities.hasElevator,
+        isFurnished: formData.amenities.isFurnished,
+        hasPool: formData.amenities.hasPool,
+      };
+
+      await updateProperty(property.id, updateData);
+
+      // Upload new images separately via POST /api/property/{id}/images
+      if (newImageFiles.length > 0) {
+        const imgForm = new FormData();
+        newImageFiles.forEach((img) => imgForm.append("images", img.file));
+        await uploadPropertyImages(property.id, imgForm);
+      }
+
+      setSubmitMsg({ type: "success", text: "Property updated successfully!" });
+      setTimeout(() => navigate("/landlord/properties"), 1500);
+    } catch (err) {
+      console.error("Failed to update property:", err);
+      const msg = err.response?.data?.message || "Failed to update property. Please try again.";
+      setSubmitMsg({ type: "error", text: msg });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -294,6 +334,80 @@ const EditProperty = () => {
                       value={formData.location}
                       onChange={handleInputChange}
                       required
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ══════ Section: Property Details ══════ */}
+            <section className="form-section">
+              <h2 className="form-section-title">Property Details</h2>
+              <div className="form-section-body">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="edit-property-bedrooms">
+                      <FaBed style={{ marginRight: 6 }} /> Bedrooms
+                    </label>
+                    <input
+                      type="number"
+                      id="edit-property-bedrooms"
+                      name="bedrooms"
+                      className="form-input"
+                      placeholder="e.g. 3"
+                      min="0"
+                      value={formData.bedrooms}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="edit-property-baths">
+                      <FaBath style={{ marginRight: 6 }} /> Bathrooms
+                    </label>
+                    <input
+                      type="number"
+                      id="edit-property-baths"
+                      name="baths"
+                      className="form-input"
+                      placeholder="e.g. 2"
+                      min="0"
+                      value={formData.baths}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="edit-property-area">
+                      <FaRulerCombined style={{ marginRight: 6 }} /> Area (sq ft)
+                    </label>
+                    <input
+                      type="number"
+                      id="edit-property-area"
+                      name="area"
+                      className="form-input"
+                      placeholder="e.g. 1200"
+                      min="1"
+                      value={formData.area}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="edit-property-floor">
+                      <FaLayerGroup style={{ marginRight: 6 }} /> Floor (optional)
+                    </label>
+                    <input
+                      type="number"
+                      id="edit-property-floor"
+                      name="floor"
+                      className="form-input"
+                      placeholder="e.g. 5"
+                      min="0"
+                      value={formData.floor}
+                      onChange={handleInputChange}
                     />
                   </div>
                 </div>
@@ -439,14 +553,34 @@ const EditProperty = () => {
               </div>
             </section>
 
+            {/* ══════ Feedback ══════ */}
+            {submitMsg && (
+              <div className={`add-property-alert ${submitMsg.type}`} style={{
+                padding: "12px 20px", borderRadius: "12px", marginBottom: "16px",
+                display: "flex", alignItems: "center", gap: "10px",
+                fontSize: "14px", fontWeight: 500,
+                background: submitMsg.type === "success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+                color: submitMsg.type === "success" ? "#059669" : "#dc2626",
+                border: `1px solid ${submitMsg.type === "success" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+              }}>
+                {submitMsg.type === "success" ? <FaCheckCircle /> : <FaTimesCircle />}
+                {submitMsg.text}
+              </div>
+            )}
+
             {/* ══════ Submit ══════ */}
             <div className="add-property-submit">
               <button
                 type="submit"
                 className="btn btn-primary btn-lg add-property-submit-btn"
                 id="update-property-btn"
+                disabled={submitting}
               >
-                <FaSave /> Save Changes
+                {submitting ? (
+                  <>Saving…</>
+                ) : (
+                  <><FaSave /> Save Changes</>
+                )}
               </button>
             </div>
           </form>

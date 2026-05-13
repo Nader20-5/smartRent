@@ -12,6 +12,10 @@ namespace SmartRent.API.DTOs.Property
         public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string Location { get; set; } = string.Empty;
+        public int Bedrooms { get; set; }
+        public int Baths { get; set; }
+        public decimal Area { get; set; }
+        public int? Floor { get; set; }
         public string PropertyType { get; set; } = string.Empty;
         public string RentalStatus { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
@@ -25,6 +29,14 @@ namespace SmartRent.API.DTOs.Property
         public bool IsFavorite { get; set; }
         public bool IsApproved { get; set; }
         public bool IsActive { get; set; }
+
+        public List<OccupiedRangeDto> OccupiedRanges { get; set; } = new();
+    }
+
+    public class OccupiedRangeDto
+    {
+        public DateTime StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 
     public class PropertyAmenitiesDto

@@ -62,6 +62,43 @@ namespace SmartRent.API.Controllers
         }
 
         // ─────────────────────────────────────────────────────────────────────
+        // PUT /api/reviews/{id}
+        // Tenant — update their review
+        // ─────────────────────────────────────────────────────────────────────
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = "Tenant")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateReviewDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            int tenantId = GetCurrentUserIdOrThrow();
+            var result = await _reviewService.UpdateAsync(tenantId, id, dto.Rating, dto.Comment);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(result.Data);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // DELETE /api/reviews/{id}
+        // Tenant — delete their review
+        // ─────────────────────────────────────────────────────────────────────
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Tenant")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            int tenantId = GetCurrentUserIdOrThrow();
+            var result = await _reviewService.DeleteAsync(tenantId, id);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return NoContent();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
         // PRIVATE HELPERS
         // ─────────────────────────────────────────────────────────────────────
         private int GetCurrentUserIdOrThrow()

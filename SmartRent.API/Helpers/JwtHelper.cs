@@ -22,6 +22,8 @@ namespace SmartRent.API.Helpers
 
             var claims = new[]
             {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.FullName),
@@ -29,11 +31,13 @@ namespace SmartRent.API.Helpers
                 new Claim("FullName", user.FullName)
             };
 
+            var expirationMinutes = _configuration.GetValue<int>("Jwt:ExpirationInMinutes", 60);
+
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(7), // Hardcoded 7 days as per plan
+                expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

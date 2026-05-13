@@ -17,11 +17,7 @@ namespace SmartRent.API.Controllers
             _propertyService = propertyService;
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // GET /api/property
-        // Public — filter by location, propertyType, minPrice, maxPrice
-        // isFavorite resolved if authenticated tenant
-        // ─────────────────────────────────────────────────────────────────────
+        // Retrieves all filtered property listings
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAll(
@@ -39,10 +35,7 @@ namespace SmartRent.API.Controllers
             return Ok(result.Data);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // GET /api/property/my
-        // Landlord — all their properties regardless of approval/active status
-        // ─────────────────────────────────────────────────────────────────────
+        // Retrieves properties owned by landlord
         [HttpGet("my")]
         [Authorize(Roles = "Landlord")]
         public async Task<IActionResult> GetMy()
@@ -56,10 +49,7 @@ namespace SmartRent.API.Controllers
             return Ok(result.Data);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // GET /api/property/{id}
-        // Optional auth — isFavorite resolved if authenticated
-        // ─────────────────────────────────────────────────────────────────────
+        // Retrieves property details by ID
         [HttpGet("{id:int}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetById(int id)
@@ -73,11 +63,7 @@ namespace SmartRent.API.Controllers
             return Ok(result.Data);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // POST /api/property
-        // Landlord — create new property with images + amenities
-        // Accepts multipart/form-data so images can be uploaded in the same request
-        // ─────────────────────────────────────────────────────────────────────
+        // Creates a new property listing
         [HttpPost]
         [Authorize(Roles = "Landlord")]
         [Consumes("multipart/form-data")]
@@ -95,10 +81,7 @@ namespace SmartRent.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // PUT /api/property/{id}
-        // Landlord (owner only) — update property details + amenities
-        // ─────────────────────────────────────────────────────────────────────
+        // Updates existing property listing details
         [HttpPut("{id:int}")]
         [Authorize(Roles = "Landlord")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePropertyDto dto)
@@ -123,10 +106,7 @@ namespace SmartRent.API.Controllers
             return Ok(result.Data);
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // DELETE /api/property/{id}
-        // Landlord (owner only) — soft delete
-        // ─────────────────────────────────────────────────────────────────────
+        // Soft deletes a property listing
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "Landlord")]
         public async Task<IActionResult> Delete(int id)
@@ -148,10 +128,7 @@ namespace SmartRent.API.Controllers
             return Ok(new { message = result.Message });
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // POST /api/property/{id}/images
-        // Landlord (owner only) — upload additional images
-        // ─────────────────────────────────────────────────────────────────────
+        // Uploads additional images for property
         [HttpPost("{id:int}/images")]
         [Authorize(Roles = "Landlord")]
         [Consumes("multipart/form-data")]
@@ -177,9 +154,7 @@ namespace SmartRent.API.Controllers
             return Ok(new { message = result.Message, imageUrls = result.Data });
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // PRIVATE HELPERS
-        // ─────────────────────────────────────────────────────────────────────
+        // Retrieves current user ID from claims
         private int? GetCurrentUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -188,6 +163,7 @@ namespace SmartRent.API.Controllers
             return int.TryParse(claim, out var id) ? id : null;
         }
 
+        // Retrieves current user ID or throws
         private int GetCurrentUserIdOrThrow()
         {
             return GetCurrentUserId()
