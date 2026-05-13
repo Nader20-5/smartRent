@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FaPlus,
   FaSlidersH,
@@ -9,7 +10,6 @@ import {
 import { MdSearchOff } from "react-icons/md";
 import Sidebar from "../../components/Sidebar";
 import PropertyCard from "../../components/PropertyCard";
-import PropertyFormModal from "../../components/PropertyFormModal";
 import { getMyProperties, deleteProperty } from "../../services/propertyService";
 
 const STATUS_OPTIONS = [
@@ -22,14 +22,11 @@ const STATUS_OPTIONS = [
 const TYPE_OPTIONS = ["All Types", "Apartment", "House", "Villa", "Studio"];
 
 const MyProperties = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
   const [typeFilter, setTypeFilter] = useState("All Types");
   const [showFilters, setShowFilters] = useState(false);
-
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProperty, setEditingProperty] = useState(null);
   const [properties, setProperties] = useState([]);
 
   const fetchProperties = async () => {
@@ -41,7 +38,7 @@ const MyProperties = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchProperties();
   }, []);
 
@@ -73,16 +70,11 @@ const MyProperties = () => {
   ].filter(Boolean).length;
 
   const handleAddProperty = () => {
-    setEditingProperty(null);
-    setIsModalOpen(true);
+    navigate("/landlord/properties/add");
   };
 
   const handleEditProperty = (id) => {
-    const prop = properties.find((p) => p.id === id);
-    if (prop) {
-      setEditingProperty(prop);
-      setIsModalOpen(true);
-    }
+    navigate(`/landlord/properties/edit/${id}`);
   };
 
   const handleDeleteProperty = async (id) => {
@@ -92,7 +84,7 @@ const MyProperties = () => {
 
     try {
       await deleteProperty(id);
-      fetchProperties(); // Refresh list after deletion
+      fetchProperties();
     } catch (err) {
       console.error("Failed to delete property:", err);
       const msg = err.response?.data?.message || "Failed to delete property. Please try again.";
@@ -100,23 +92,15 @@ const MyProperties = () => {
     }
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingProperty(null);
-  };
-
   return (
     <div className="dashboard-layout">
       <Sidebar />
 
       <main className="dashboard-content">
-        {/* Header */}
         <div className="dashboard-header">
           <div>
             <h1 className="dashboard-title">My Properties</h1>
-            <p className="dashboard-subtitle">
-              Manage and monitor all of your listed properties
-            </p>
+            <p className="dashboard-subtitle">Manage and monitor all of your listed properties</p>
           </div>
           <button
             className="btn btn-primary"
@@ -127,7 +111,6 @@ const MyProperties = () => {
           </button>
         </div>
 
-        {/* Search & Filter */}
         <div className="my-properties-toolbar" id="my-properties-toolbar">
           <div className="my-properties-search">
             <FaSearch className="my-properties-search-icon" />
@@ -198,8 +181,7 @@ const MyProperties = () => {
         <div className="my-properties-results">
           <span className="filter-results-count">
             <FaBuilding className="filter-results-icon" />
-            {filteredProperties.length}{" "}
-            {filteredProperties.length === 1 ? "property" : "properties"}
+            {filteredProperties.length} {filteredProperties.length === 1 ? "property" : "properties"}
           </span>
         </div>
 
@@ -238,14 +220,6 @@ const MyProperties = () => {
           </div>
         )}
       </main>
-
-      {/* Property Form Modal */}
-      <PropertyFormModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        property={editingProperty}
-        onSuccess={fetchProperties}
-      />
     </div>
   );
 };
