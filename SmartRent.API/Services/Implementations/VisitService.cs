@@ -76,10 +76,10 @@ namespace SmartRent.API.Services.Implementations
                 {
                     await _notificationService.CreateAsync(
                         property.LandlordId,
-                        "طلب زيارة جديد",
-                        $"لديك طلب زيارة جديد للعقار: {property.Title}",
+                        "New Visit Request",
+                        $"You have a new visit request for the property: {property.Title}",
                         "VisitRequest",
-                        $"/landlord/visits" 
+                        "/landlord/visits" 
                     );
                 }
 

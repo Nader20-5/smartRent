@@ -15,70 +15,52 @@ import PropertyCard from "../../components/PropertyCard";
 import NotificationBell from "../../components/NotificationBell";
 import { useAuth } from "../../context/AuthContext";
 import { getMyProperties, deleteProperty } from "../../services/propertyService";
+import { getNotifications } from "../../services/notificationService";
 
-const DUMMY_ACTIVITY = [
-  {
-    id: 1,
-    type: "visit",
-    icon: FaEye,
-    title: "Visit request from Sophia Martinez",
-    property: "The Glass House Residency",
-    time: "2 hours ago",
-    color: "activity-visit",
-  },
-  {
-    id: 2,
-    type: "rental",
-    icon: FaFileSignature,
-    title: "Rental application from Daniel Okafor",
-    property: "Emerald Crest Villa",
-    time: "5 hours ago",
-    color: "activity-rental",
-  },
-  {
-    id: 3,
-    type: "approval",
-    icon: FaCheckCircle,
-    title: "Property approved by admin",
-    property: "Oakwood Family Residence",
-    time: "1 day ago",
-    color: "activity-approval",
-  },
-  {
-    id: 4,
-    type: "visit",
-    icon: FaCalendarAlt,
-    title: "Upcoming visit with Lina Chen",
-    property: "The Glass House Residency",
-    time: "Tomorrow at 3:00 PM",
-    color: "activity-visit",
-  },
-  {
-    id: 5,
-    type: "tenant",
-    icon: FaUserCheck,
-    title: "New tenant moved into property",
-    property: "Riverside Cottage Retreat",
-    time: "3 days ago",
-    color: "activity-tenant",
-  },
-];
+const getActivityStyles = (type = '', title = '') => {
+  const t = `${type} ${title}`.toLowerCase();
+  if (t.includes('visit')) return { icon: FaEye, color: 'activity-visit' };
+  if (t.includes('rental') || t.includes('application')) return { icon: FaFileSignature, color: 'activity-rental' };
+  if (t.includes('approv')) return { icon: FaCheckCircle, color: 'activity-approval' };
+  if (t.includes('tenant') || t.includes('move')) return { icon: FaUserCheck, color: 'activity-tenant' };
+  return { icon: FaBuilding, color: 'activity-default' };
+};
+
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const seconds = Math.floor((new Date() - date) / 1000);
+  if (seconds < 60) return `${Math.max(seconds, 0)} seconds ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days !== 1 ? 's' : ''} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months !== 1 ? 's' : ''} ago`;
+};
 
 const LandlordDashboard = () => {
   const [activeTab, setActiveTab] = useState("activity");
   const [properties, setProperties] = useState([]);
+  const [activities, setActivities] = useState([]);
   const { token } = useAuth();
 
   React.useEffect(() => {
-    const fetchProperties = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const data = await getMyProperties();
-        setProperties(data?.data || data || []);
+        const [propsData, notifData] = await Promise.all([
+          getMyProperties(),
+          getNotifications()
+        ]);
+        setProperties(propsData?.data || propsData || []);
+        setActivities(notifData?.items || notifData || []);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch dashboard data:", err);
       }
     };
-    fetchProperties();
+    fetchDashboardData();
   }, []);
 
   // ── Derive stats from properties data ──
@@ -200,26 +182,32 @@ const LandlordDashboard = () => {
         {/* ══════ Tab Content: Recent Activity ══════ */}
         {activeTab === "activity" && (
           <section className="activity-timeline" id="activity-timeline">
-            {DUMMY_ACTIVITY.map((event) => {
-              const EventIcon = event.icon;
-              return (
-                <div
-                  key={event.id}
-                  className={`activity-item ${event.color}`}
-                >
-                  <div className="activity-item-dot">
-                    <EventIcon className="activity-item-dot-icon" />
+            {activities.length > 0 ? (
+              activities.map((event, index) => {
+                const { icon: EventIcon, color } = getActivityStyles(event.type, event.title);
+                return (
+                  <div
+                    key={event.id || index}
+                    className={`activity-item ${color}`}
+                  >
+                    <div className="activity-item-dot">
+                      <EventIcon className="activity-item-dot-icon" />
+                    </div>
+                    <div className="activity-item-content">
+                      <p className="activity-item-title">{event.title}</p>
+                      <span className="activity-item-property">
+                        {event.message}
+                      </span>
+                      <span className="activity-item-time">{formatTimeAgo(event.createdAt)}</span>
+                    </div>
                   </div>
-                  <div className="activity-item-content">
-                    <p className="activity-item-title">{event.title}</p>
-                    <span className="activity-item-property">
-                      {event.property}
-                    </span>
-                    <span className="activity-item-time">{event.time}</span>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <p className="empty-state-text" style={{ padding: '2rem', textAlign: 'center' }}>
+                No recent activity found.
+              </p>
+            )}
           </section>
         )}
 

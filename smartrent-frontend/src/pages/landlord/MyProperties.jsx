@@ -1,31 +1,20 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  FaPlus,
-  FaSlidersH,
-  FaSearch,
-  FaTimesCircle,
-  FaBuilding,
-} from "react-icons/fa";
-import { MdSearchOff } from "react-icons/md";
-import Sidebar from "../../components/Sidebar";
-import PropertyCard from "../../components/PropertyCard";
-import { getMyProperties, deleteProperty } from "../../services/propertyService";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaPlus, FaSearch, FaTimesCircle, FaSlidersH, FaBuilding } from 'react-icons/fa';
+import { MdSearchOff } from 'react-icons/md';
+import Sidebar from '../../components/Sidebar';
+import PropertyCard from '../../components/PropertyCard';
+import { getMyProperties, deleteProperty } from '../../services/propertyService';
+import { PROPERTY_STATUS, PROPERTY_TYPES } from '../../utils/constants';
 
-const STATUS_OPTIONS = [
-  "All Statuses",
-  "Available",
-  "Pending Approval",
-  "Approved",
-  "Rejected",
-];
-const TYPE_OPTIONS = ["All Types", "Apartment", "House", "Villa", "Studio"];
+const STATUS_OPTIONS = ['All Statuses', ...Object.values(PROPERTY_STATUS)];
+const TYPE_OPTIONS = ['All Types', ...Object.values(PROPERTY_TYPES)];
 
 const MyProperties = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All Statuses");
-  const [typeFilter, setTypeFilter] = useState("All Types");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [typeFilter, setTypeFilter] = useState('All Types');
   const [showFilters, setShowFilters] = useState(false);
   const [properties, setProperties] = useState([]);
 
@@ -51,26 +40,26 @@ const MyProperties = () => {
       ) {
         return false;
       }
-      if (statusFilter !== "All Statuses" && p.rentalStatus !== statusFilter) return false;
-      if (typeFilter !== "All Types" && p.propertyType !== typeFilter) return false;
+      if (statusFilter !== 'All Statuses' && p.rentalStatus !== statusFilter) return false;
+      if (typeFilter !== 'All Types' && p.propertyType !== typeFilter) return false;
       return true;
     });
   }, [searchQuery, statusFilter, typeFilter, properties]);
 
   const clearAllFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("All Statuses");
-    setTypeFilter("All Types");
+    setSearchQuery('');
+    setStatusFilter('All Statuses');
+    setTypeFilter('All Types');
   };
 
   const activeFilterCount = [
     searchQuery,
-    statusFilter !== "All Statuses" ? statusFilter : "",
-    typeFilter !== "All Types" ? typeFilter : "",
+    statusFilter !== 'All Statuses' ? statusFilter : '',
+    typeFilter !== 'All Types' ? typeFilter : '',
   ].filter(Boolean).length;
 
   const handleAddProperty = () => {
-    navigate("/landlord/properties/add");
+    navigate('/landlord/properties/add');
   };
 
   const handleEditProperty = (id) => {
@@ -78,7 +67,11 @@ const MyProperties = () => {
   };
 
   const handleDeleteProperty = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this property? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this property? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
@@ -86,8 +79,8 @@ const MyProperties = () => {
       await deleteProperty(id);
       fetchProperties();
     } catch (err) {
-      console.error("Failed to delete property:", err);
-      const msg = err.response?.data?.message || "Failed to delete property. Please try again.";
+      console.error('Failed to delete property:', err);
+      const msg = err.response?.data?.message || 'Failed to delete property. Please try again.';
       alert(msg);
     }
   };
@@ -102,11 +95,7 @@ const MyProperties = () => {
             <h1 className="dashboard-title">My Properties</h1>
             <p className="dashboard-subtitle">Manage and monitor all of your listed properties</p>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={handleAddProperty}
-            id="add-property-btn"
-          >
+          <button className="btn btn-primary" onClick={handleAddProperty} id="add-property-btn">
             <FaPlus /> Add Property
           </button>
         </div>
@@ -125,7 +114,7 @@ const MyProperties = () => {
             {searchQuery && (
               <button
                 className="my-properties-search-clear"
-                onClick={() => setSearchQuery("")}
+                onClick={() => setSearchQuery('')}
                 aria-label="Clear search"
               >
                 <FaTimesCircle />
@@ -133,7 +122,7 @@ const MyProperties = () => {
             )}
           </div>
           <button
-            className={`filter-toggle-btn ${showFilters ? "is-active" : ""}`}
+            className={`filter-toggle-btn ${showFilters ? 'is-active' : ''}`}
             onClick={() => setShowFilters((v) => !v)}
             id="my-properties-filter-toggle"
           >
@@ -154,7 +143,9 @@ const MyProperties = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
                 ))}
               </select>
             </div>
@@ -166,7 +157,9 @@ const MyProperties = () => {
                 onChange={(e) => setTypeFilter(e.target.value)}
               >
                 {TYPE_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
                 ))}
               </select>
             </div>
@@ -181,7 +174,8 @@ const MyProperties = () => {
         <div className="my-properties-results">
           <span className="filter-results-count">
             <FaBuilding className="filter-results-icon" />
-            {filteredProperties.length} {filteredProperties.length === 1 ? "property" : "properties"}
+            {filteredProperties.length}{' '}
+            {filteredProperties.length === 1 ? 'property' : 'properties'}
           </span>
         </div>
 
@@ -205,7 +199,7 @@ const MyProperties = () => {
             <h3 className="empty-state-title">No Properties Found</h3>
             <p className="empty-state-text">
               {activeFilterCount > 0
-                ? "No properties match your current filters."
+                ? 'No properties match your current filters.'
                 : "You haven't listed any properties yet."}
             </p>
             {activeFilterCount > 0 ? (
