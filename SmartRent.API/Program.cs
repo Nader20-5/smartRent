@@ -7,20 +7,18 @@ using SmartRent.API.Data;
 using SmartRent.API.Helpers;
 using SmartRent.API.Hubs;
 using SmartRent.API.Middlewares;
+using SmartRent.API.Repositories.Implementations;
+using SmartRent.API.Repositories.Interfaces;
 using SmartRent.API.Services.Implementations;
 using SmartRent.API.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ──────────────────────────────────────────────
-// 1. Database Context
-// ──────────────────────────────────────────────
+// Configure database context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ──────────────────────────────────────────────
-// 2. JWT Authentication
-// ──────────────────────────────────────────────
+// Configure JWT authentication
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
 var jwtAudience = builder.Configuration["Jwt:Audience"]!;
@@ -61,23 +59,23 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ──────────────────────────────────────────────
-// 3. CORS
-// ──────────────────────────────────────────────
+// Configure CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// ──────────────────────────────────────────────
-// 4. Services Registration
-// ──────────────────────────────────────────────
+// Register repository layer
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Register application services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
@@ -90,18 +88,15 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // Helpers
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<FileUploadHelper>();
+builder.Services.AddScoped<AesEncryptionHelper>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// ──────────────────────────────────────────────
-// 5. SignalR
-// ──────────────────────────────────────────────
+// Configure SignalR real-time hubs
 builder.Services.AddSignalR();
 
-// ──────────────────────────────────────────────
-// 6. Swagger
-// ──────────────────────────────────────────────
+// Configure Swagger documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -138,23 +133,18 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ──────────────────────────────────────────────
-// 7. Controllers
-// ──────────────────────────────────────────────
+// Configure API controllers
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// ──────────────────────────────────────────────
-// Middleware Pipeline
-// ──────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Setup middleware pipeline
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
@@ -165,5 +155,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+
 
 app.Run();

@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SmartRent.API.DTOs.Common;
 using SmartRent.API.DTOs.Property;
 using SmartRent.API.Services.Interfaces;
+using System.Security.Claims;
 
 namespace SmartRent.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/property")]
     public class PropertyController : ControllerBase
     {
         private readonly IPropertyService _propertyService;
@@ -17,58 +17,157 @@ namespace SmartRent.API.Controllers
             _propertyService = propertyService;
         }
 
+        // Retrieves all filtered property listings
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] PaginationDto pagination)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? location,
+            [FromQuery] string? propertyType,
+            [FromQuery] decimal? minPrice,
+            [FromQuery] decimal? maxPrice)
         {
-            // TODO: implement
-            return Ok();
+            int? currentUserId = GetCurrentUserId();
+            var result = await _propertyService.GetAllAsync(location, propertyType, minPrice, maxPrice, currentUserId);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(result.Data);
         }
 
-        [HttpGet("{id}")]
+        // Retrieves properties owned by landlord
+        [HttpGet("my")]
+        [Authorize(Roles = "Landlord")]
+        public async Task<IActionResult> GetMy()
+        {
+            int landlordId = GetCurrentUserIdOrThrow();
+            var result = await _propertyService.GetByLandlordAsync(landlordId);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(result.Data);
+        }
+
+        // Retrieves property details by ID
+        [HttpGet("{id:int}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(int id)
         {
-            // TODO: implement
-            return Ok();
+            int? currentUserId = GetCurrentUserId();
+            var result = await _propertyService.GetByIdAsync(id, currentUserId);
+
+            if (!result.Success)
+                return NotFound(new { message = result.Message });
+
+            return Ok(result.Data);
         }
 
+        // Creates a new property listing
         [HttpPost]
         [Authorize(Roles = "Landlord")]
-        public async Task<IActionResult> Create([FromBody] CreatePropertyDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Create([FromForm] CreatePropertyDto dto)
         {
-            // TODO: implement
-            return Ok();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            int landlordId = GetCurrentUserIdOrThrow();
+            var result = await _propertyService.CreateAsync(landlordId, dto);
+
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
         }
 
-        [HttpPut("{id}")]
+        // Updates existing property listing details
+        [HttpPut("{id:int}")]
         [Authorize(Roles = "Landlord")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePropertyDto dto)
         {
-            // TODO: implement
-            return Ok();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            int landlordId = GetCurrentUserIdOrThrow();
+            var result = await _propertyService.UpdateAsync(landlordId, id, dto);
+
+            if (!result.Success)
+            {
+                if (result.Message!.Contains("not found"))
+                    return NotFound(new { message = result.Message });
+
+                if (result.Message.Contains("Unauthorized"))
+                    return Forbid();
+
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(result.Data);
         }
 
-        [HttpDelete("{id}")]
+        // Soft deletes a property listing
+        [HttpDelete("{id:int}")]
         [Authorize(Roles = "Landlord")]
         public async Task<IActionResult> Delete(int id)
         {
-            // TODO: implement
-            return Ok();
+            int landlordId = GetCurrentUserIdOrThrow();
+            var result = await _propertyService.DeleteAsync(landlordId, id);
+
+            if (!result.Success)
+            {
+                if (result.Message!.Contains("not found"))
+                    return NotFound(new { message = result.Message });
+
+                if (result.Message.Contains("Unauthorized"))
+                    return Forbid();
+
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(new { message = result.Message });
         }
 
-        [HttpGet("landlord")]
+        // Uploads additional images for property
+        [HttpPost("{id:int}/images")]
         [Authorize(Roles = "Landlord")]
-        public async Task<IActionResult> GetByLandlord([FromQuery] PaginationDto pagination)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadImages(int id, [FromForm] List<IFormFile> images)
         {
-            // TODO: implement
-            return Ok();
+            if (images == null || images.Count == 0)
+                return BadRequest(new { message = "No images provided." });
+
+            int landlordId = GetCurrentUserIdOrThrow();
+            var result = await _propertyService.UploadImagesAsync(landlordId, id, images);
+
+            if (!result.Success)
+            {
+                if (result.Message!.Contains("not found"))
+                    return NotFound(new { message = result.Message });
+
+                if (result.Message.Contains("Unauthorized"))
+                    return Forbid();
+
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(new { message = result.Message, imageUrls = result.Data });
         }
 
-        [HttpPost("{id}/images")]
-        [Authorize(Roles = "Landlord")]
-        public async Task<IActionResult> UploadImages(int id)
+        // Retrieves current user ID from claims
+        private int? GetCurrentUserId()
         {
-            // TODO: implement
-            return Ok();
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("sub")?.Value;
+
+            return int.TryParse(claim, out var id) ? id : null;
+        }
+
+        // Retrieves current user ID or throws
+        private int GetCurrentUserIdOrThrow()
+        {
+            return GetCurrentUserId()
+                ?? throw new UnauthorizedAccessException("User is not authenticated.");
         }
     }
 }

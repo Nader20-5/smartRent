@@ -1,0 +1,174 @@
+[
+  {
+    "id": 1,
+    "title": "The Glass House Residency",
+    "description": "Experience the pinnacle of urban living in this architectural masterpiece. Floor-to-ceiling windows frame panoramic city views, while premium finishes — Italian marble countertops, hardwood flooring, and designer fixtures — define every room. The open-plan living area flows seamlessly onto a wraparound terrace, perfect for entertaining. A chef's kitchen with top-tier appliances, a spa-inspired bathroom, and smart-home integration throughout make this a rare offering for the discerning tenant.",
+    "price": 4500.00,
+    "location": "88 Skyline Boulevard, West District",
+    "propertyType": "Apartment",
+    "rentalStatus": "Available",
+    "createdAt": "2026-04-01T10:00:00Z",
+    "amenities": {
+      "hasParking": true,
+      "hasElevator": true,
+      "isFurnished": true,
+      "hasPool": false
+    },
+    "images": [
+      { "id": 10, "imageUrl": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop", "isMain": true },
+      { "id": 11, "imageUrl": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop", "isMain": false },
+      { "id": 12, "imageUrl": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop", "isMain": false }
+    ],
+    "landlord": {
+      "id": 5,
+      "fullName": "Robert J. Sterling",
+      "phoneNumber": "01012345678",
+      "profileImage": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+    },
+    "rating": { "averageScore": 4.8, "totalReviews": 24 },
+    "isFavorite": false
+  },
+  {
+    "id": 2,
+    "title": "Emerald Crest Villa",
+    "description": "Nestled on a lush hillside, this stunning villa blends Mediterranean charm with modern luxury. A grand foyer opens to a sunlit great room with vaulted ceilings and handcrafted stone accents. The resort-style backyard features an infinity pool, outdoor kitchen, and fire pit lounge. Four generously sized bedrooms each offer en-suite bathrooms, while the private study and wine cellar add exclusive touches for refined living.",
+    "price": 8200.00,
+    "location": "12 Emerald Ridge, Hillcrest Heights",
+    "propertyType": "Villa",
+    "rentalStatus": "Available",
+    "createdAt": "2026-03-28T14:30:00Z",
+    "amenities": {
+      "hasParking": true,
+      "hasElevator": false,
+      "isFurnished": true,
+      "hasPool": true
+    },
+    "images": [
+      { "id": 20, "imageUrl": "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop", "isMain": true },
+      { "id": 21, "imageUrl": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop", "isMain": false },
+      { "id": 22, "imageUrl": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop", "isMain": false }
+    ],
+    "landlord": {
+      "id": 8,
+      "fullName": "Amara D. Fontaine",
+      "phoneNumber": "01198765432",
+      "profileImage": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
+    },
+    "rating": { "averageScore": 4.9, "totalReviews": 31 },
+    "isFavorite": true
+  },
+  {
+    "id": 3,
+    "title": "Horizon Loft Studio",
+    "description": "A sleek, efficiently designed studio loft in the heart of the arts district. Exposed brick walls meet polished concrete floors, creating an industrial-chic ambiance. The integrated kitchen features quartz countertops and energy-efficient appliances. Oversized windows flood the space with natural light, and the mezzanine sleeping area maximizes every square foot. Ideal for the creative professional who values location and style.",
+    "price": 1800.00,
+    "location": "45 Canvas Lane, Arts Quarter",
+    "propertyType": "Studio",
+    "rentalStatus": "Pending Approval",
+    "createdAt": "2026-04-05T09:15:00Z",
+    "amenities": {
+      "hasParking": false,
+      "hasElevator": true,
+      "isFurnished": true,
+      "hasPool": false
+    },
+    "images": [
+      { "id": 30, "imageUrl": "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&h=600&fit=crop", "isMain": true },
+      { "id": 31, "imageUrl": "https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=800&h=600&fit=crop", "isMain": false }
+    ],
+    "landlord": {
+      "id": 5,
+      "fullName": "Robert J. Sterling",
+      "phoneNumber": "01012345678",
+      "profileImage": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+    },
+    "rating": { "averageScore": 4.5, "totalReviews": 12 },
+    "isFavorite": false
+  },
+  {
+    "id": 4,
+    "title": "Oakwood Family Residence",
+    "description": "A warm and welcoming family home set on a tree-lined street in one of the city's most sought-after suburbs. The open-concept living and dining area flows into a gourmet kitchen with a large island and breakfast nook. Upstairs, the primary suite features a walk-in closet and spa bathroom, while three additional bedrooms offer plenty of space for a growing family. The backyard boasts a covered patio, a manicured garden, and a detached two-car garage.",
+    "price": 3200.00,
+    "location": "7 Oakwood Terrace, Maplewood",
+    "propertyType": "House",
+    "rentalStatus": "Available",
+    "createdAt": "2026-03-20T16:45:00Z",
+    "amenities": {
+      "hasParking": true,
+      "hasElevator": false,
+      "isFurnished": false,
+      "hasPool": false
+    },
+    "images": [
+      { "id": 40, "imageUrl": "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop", "isMain": true },
+      { "id": 41, "imageUrl": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=600&fit=crop", "isMain": false },
+      { "id": 42, "imageUrl": "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=800&h=600&fit=crop", "isMain": false }
+    ],
+    "landlord": {
+      "id": 12,
+      "fullName": "James T. Whitmore",
+      "phoneNumber": "01155667788",
+      "profileImage": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+    },
+    "rating": { "averageScore": 4.6, "totalReviews": 18 },
+    "isFavorite": false
+  },
+  {
+    "id": 5,
+    "title": "Azure Penthouse Suite",
+    "description": "Perched atop the prestigious Azure Tower, this penthouse defines luxury living. A private elevator opens directly into a grand entrance hall with double-height ceilings and a cascading chandelier. The expansive living space features a built-in entertainment wall, a gas fireplace, and a wraparound terrace with 360-degree skyline views. Two master suites, a dedicated home theater, and a rooftop hot tub complete the experience of living above it all.",
+    "price": 12500.00,
+    "location": "1 Azure Tower, Financial District, Penthouse Level",
+    "propertyType": "Apartment",
+    "rentalStatus": "Available",
+    "createdAt": "2026-04-08T11:00:00Z",
+    "amenities": {
+      "hasParking": true,
+      "hasElevator": true,
+      "isFurnished": true,
+      "hasPool": true
+    },
+    "images": [
+      { "id": 50, "imageUrl": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop", "isMain": true },
+      { "id": 51, "imageUrl": "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800&h=600&fit=crop", "isMain": false },
+      { "id": 52, "imageUrl": "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop", "isMain": false }
+    ],
+    "landlord": {
+      "id": 8,
+      "fullName": "Amara D. Fontaine",
+      "phoneNumber": "01198765432",
+      "profileImage": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
+    },
+    "rating": { "averageScore": 5.0, "totalReviews": 9 },
+    "isFavorite": true
+  },
+  {
+    "id": 6,
+    "title": "Riverside Cottage Retreat",
+    "description": "Escape to this charming riverside cottage where nature meets comfort. Exposed wooden beams and a stone hearth fireplace create a cozy atmosphere, while large French doors open onto a private deck overlooking the river. The updated kitchen features farmhouse cabinetry and modern appliances. Two bedrooms with plush linens and a reading nook with river views round out this idyllic retreat, perfect for those seeking tranquility without sacrificing convenience.",
+    "price": 2100.00,
+    "location": "33 Willow Bank Lane, Riverside",
+    "propertyType": "House",
+    "rentalStatus": "Rejected",
+    "createdAt": "2026-03-15T08:30:00Z",
+    "amenities": {
+      "hasParking": true,
+      "hasElevator": false,
+      "isFurnished": true,
+      "hasPool": false
+    },
+    "images": [
+      { "id": 60, "imageUrl": "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=800&h=600&fit=crop", "isMain": true },
+      { "id": 61, "imageUrl": "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?w=800&h=600&fit=crop", "isMain": false }
+    ],
+    "landlord": {
+      "id": 12,
+      "fullName": "James T. Whitmore",
+      "phoneNumber": "01155667788",
+      "profileImage": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+    },
+    "rating": { "averageScore": 4.3, "totalReviews": 7 },
+    "isFavorite": false
+  }
+]

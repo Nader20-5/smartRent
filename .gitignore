@@ -1,0 +1,50 @@
+# Root .gitignore for SmartRent Project
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains / Idea
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Backend (ASP.NET Core) specific to ignore from root if nested
+SmartRent.API/bin/
+SmartRent.API/obj/
+SmartRent.API/appsettings.Development.json
+SmartRent.API/appsettings.Local.json
+
+# Frontend (Node/React) specific to ignore from root if nested
+smartrent-frontend/node_modules/
+smartrent-frontend/dist/
+smartrent-frontend/.env
+smartrent-frontend/.env*.local
+
+# Database / Export files
+*.sql
+*.pdf
+# (Note: keeping database_structure.md as it is documentation)
+
+# Build artifacts
+build/
+bin/
+obj/
+dist/
+publish/

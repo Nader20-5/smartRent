@@ -4,44 +4,37 @@ namespace SmartRent.API.DTOs.Property
 {
     public class UpdatePropertyDto
     {
-        [MaxLength(200)]
+        [MaxLength(150)]
         public string? Title { get; set; }
 
-        [MaxLength(2000)]
         public string? Description { get; set; }
 
         [MaxLength(50)]
         public string? PropertyType { get; set; }
 
         [MaxLength(500)]
-        public string? Address { get; set; }
+        public string? Location { get; set; }
 
-        [MaxLength(100)]
-        public string? City { get; set; }
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than zero.")]
+        public decimal? Price { get; set; }
 
-        [MaxLength(100)]
-        public string? State { get; set; }
-
-        [MaxLength(20)]
-        public string? ZipCode { get; set; }
-
-        [Range(0, double.MaxValue)]
-        public decimal? MonthlyRent { get; set; }
-
-        [Range(0, double.MaxValue)]
-        public decimal? SecurityDeposit { get; set; }
-
-        [Range(0, 50)]
+        [Range(0, 100, ErrorMessage = "Bedrooms must be a positive number.")]
         public int? Bedrooms { get; set; }
 
-        [Range(0, 50)]
-        public int? Bathrooms { get; set; }
+        [Range(0, 100, ErrorMessage = "Baths must be a positive number.")]
+        public int? Baths { get; set; }
 
-        [Range(0, double.MaxValue)]
-        public double? AreaSqFt { get; set; }
+        [Range(1, double.MaxValue, ErrorMessage = "Area must be greater than zero.")]
+        public decimal? Area { get; set; }
 
-        public bool? IsAvailable { get; set; }
+        public int? Floor { get; set; }
 
-        public List<string>? Amenities { get; set; }
+        public string? RentalStatus { get; set; }
+
+        // Amenities
+        public bool? HasParking { get; set; }
+        public bool? HasElevator { get; set; }
+        public bool? IsFurnished { get; set; }
+        public bool? HasPool { get; set; }
     }
 }

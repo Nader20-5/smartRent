@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("VisitRequests")]
     public class VisitRequest
     {
         [Key]
@@ -28,10 +29,10 @@ namespace SmartRent.API.Models
 
         [Required]
         [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Cancelled
+        public string Status { get; set; } = "Pending"; // Pending, Accepted, Rejected, Cancelled
 
         [MaxLength(500)]
-        public string? RejectionReason { get; set; }
+        public string? LandlordNote { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

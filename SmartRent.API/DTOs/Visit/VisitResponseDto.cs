@@ -8,6 +8,8 @@ namespace SmartRent.API.DTOs.Visit
 
         public string PropertyTitle { get; set; } = string.Empty;
 
+        public string PropertyLocation { get; set; } = string.Empty;
+
         public int TenantId { get; set; }
 
         public string TenantName { get; set; } = string.Empty;
@@ -19,6 +21,8 @@ namespace SmartRent.API.DTOs.Visit
         public string Status { get; set; } = string.Empty;
 
         public string? RejectionReason { get; set; }
+
+        public string? PropertyImageUrl { get; set; }
 
         public DateTime CreatedAt { get; set; }
     }

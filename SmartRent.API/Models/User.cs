@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartRent.API.Models
 {
+    [Table("Users")]
     public class User
     {
         [Key]
@@ -10,34 +11,32 @@ namespace SmartRent.API.Models
 
         [Required]
         [MaxLength(100)]
-        public string FirstName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(100)]
-        public string LastName { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(255)]
         public string Email { get; set; } = string.Empty;
 
         [Required]
+        [MaxLength(255)]
+        [Column("Password")]
         public string PasswordHash { get; set; } = string.Empty;
+
+        [MaxLength(20)]
+        public string? PhoneNumber { get; set; }
 
         [Required]
         [MaxLength(20)]
         public string Role { get; set; } = string.Empty; // Admin, Landlord, Tenant
 
-        [MaxLength(20)]
-        public string? Phone { get; set; }
+        public bool IsApproved { get; set; } = false;
 
         [MaxLength(500)]
-        public string? ProfileImageUrl { get; set; }
+        public string? ProfileImage { get; set; }
 
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public DateTime? UpdatedAt { get; set; }
 
         // Navigation properties
         public ICollection<Property> Properties { get; set; } = new List<Property>();
